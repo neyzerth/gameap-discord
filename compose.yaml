@@ -1,8 +1,13 @@
 services:
   gameap-bot:
-    build:
-      context: .
-      network: host          # BuildKit DNS is broken on this host; host network fixes npm ci
+    # La imagen la construye y publica el workflow "docker" en
+    # ghcr.io/neyzerth/gameap-discord (main -> :latest). Actualizar = pull + up.
+    # Para construir en local (probar un cambio sin esperar al CI) descomenta el
+    # bloque build y usa: docker compose up -d --build
+    image: ghcr.io/neyzerth/gameap-discord:latest
+    # build:
+    #   context: .
+    #   network: host          # BuildKit DNS is broken on this host; host network fixes npm ci
     container_name: gameap-bot
     user: "1000:1000"           # same uid as the host user, so ./data stays editable
     restart: unless-stopped

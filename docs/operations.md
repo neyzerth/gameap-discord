@@ -24,14 +24,17 @@ cp config/guilds.example.json  config/guilds.json
 npm install
 npm test                                   # 77 tests, must pass before deploying
 npm run deploy                             # registers the GLOBAL commands
-docker compose up -d --build
+docker compose pull && docker compose up -d
 docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
 
 Details in the `compose.yaml` that are not cosmetic:
 
 - `network_mode: host` — UFW blocks container → host; this way the bot reaches `127.0.0.1:8025`.
-- `build.network: host` — BuildKit can't resolve DNS on this host; `npm ci` inside the build used to fail.
+- `image:` + a commented `build:` — the image is built and published by the `docker` workflow
+  (see [Using the published image](#using-the-published-image)); uncomment the block to build locally
+  and keep `build.network: host`, because BuildKit can't resolve DNS on this host (`npm ci` inside
+  the build used to fail).
 - `user: "1000:1000"` — the same uid as the host user, so `./data` doesn't end up root-owned.
 - `logging` with `max-size: 10m` / `max-file: 3` — the log doesn't grow unchecked.
 
@@ -39,10 +42,14 @@ Details in the `compose.yaml` that are not cosmetic:
 
 ```bash
 cd /opt/gameap-discord-bot
-git pull                     # or edit the files directly
-npm test
-docker compose up -d --build # rebuilds and recreates
+docker compose pull          # pulls the image the CI published from main
+docker compose up -d         # recreates the container with the new code
+docker logs -f gameap-bot    # "loaded 11 commands"
 ```
+
+The suite runs in CI before publishing, so there is nothing to test or build on the host. If you are
+working on the code locally and don't want to wait for CI, uncomment the `build:` block in
+`compose.yaml` and use `docker compose up -d --build`.
 
 If you touched `src/commands/` (name, description, or options), **also**:
 
@@ -62,15 +69,14 @@ image to the GitHub Container Registry:
 | pull request | nothing: it only compiles, to validate the Dockerfile |
 | manual ("Run workflow") | the same tags as the ref it runs on |
 
-To run from the registry instead of building on the host, swap the `build:` block for the image;
-everything else in the service stays the same (`env_file`, the `./data` and `./config` mounts,
-`network_mode: host`):
+`compose.yaml` already uses that image; the rest of the service is unchanged (`env_file`, the `./data`
+and `./config` mounts, `network_mode: host`):
 
 ```yaml
 services:
   gameap-bot:
     image: ghcr.io/neyzerth/gameap-discord:latest
-    # build:              # you can keep both: --build then builds locally
+    # build:            # uncomment to build locally instead of pulling
     #   context: .
     #   network: host
 ```

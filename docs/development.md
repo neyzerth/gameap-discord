@@ -10,8 +10,8 @@
 ```bash
 npm test                  # 77 tests, no network or Discord
 npm run deploy            # registers the global commands (needs .env)
-npm start                 # run the bot outside Docker (needs .env in the environment)
-docker compose up -d --build
+npm start                  # run the bot outside Docker (needs .env in the environment)
+docker compose pull && docker compose up -d   # the published image (local build: see below)
 ```
 
 ## Code map
@@ -88,7 +88,7 @@ export async function execute(interaction) {
    fails if the text is not in the catalogs (`commands.myCommand.description` and
    `commands.myCommand.options.server`, see [Adding a language](#adding-a-language)).
 4. `npm run deploy` to register it on Discord (global).
-5. `docker compose up -d --build` so the bot loads it (`loaded N commands`).
+5. `docker compose pull && docker compose up -d` so the bot loads it (`loaded N commands`).
 
 Conventions:
 

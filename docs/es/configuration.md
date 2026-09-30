@@ -212,7 +212,7 @@ versiona (todo `data/` es local) y se puede borrar sin perder configuración.
 | `data/locale.json` | Inmediato (lo escribe `/language` y lo recarga en memoria) |
 | `config/guilds.json` o `config/servers.json` | Reiniciar el contenedor: `docker compose restart` (la config se lee una vez y se cachea) |
 | `.env` | `docker compose up -d` (recrea con las nuevas variables) |
-| Comandos (`src/commands/`) | `npm run deploy` (registro global) + `docker compose up -d --build` |
+| Comandos (`src/commands/`) | `npm run deploy` (registro global) + `docker compose pull && docker compose up -d` |
 
 > `src/config.js` expone `reloadConfig()`, pero ningún camino de runtime lo llama: la recarga en
 > caliente quedó fuera de alcance a propósito (reiniciar es un segundo y evita estados a medias).

@@ -11,7 +11,7 @@
 npm test                  # 77 tests, sin red ni Discord
 npm run deploy            # registra los comandos globales (necesita .env)
 npm start                 # correr el bot fuera de Docker (necesita .env en el entorno)
-docker compose up -d --build
+docker compose pull && docker compose up -d   # la imagen publicada (build local: ver abajo)
 ```
 
 ## Mapa del código
@@ -89,7 +89,7 @@ export async function execute(interaction) {
    falla si el texto no está en los catálogos (`commands.miComando.description` y
    `commands.miComando.options.server`, ver [Agregar un idioma](#agregar-un-idioma)).
 4. `npm run deploy` para registrarlo en Discord (global).
-5. `docker compose up -d --build` para que el bot lo cargue (`loaded N commands`).
+5. `docker compose pull && docker compose up -d` para que el bot lo cargue (`loaded N commands`).
 
 Convenciones:
 

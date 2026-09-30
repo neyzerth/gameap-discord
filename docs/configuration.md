@@ -199,6 +199,6 @@ guild falls back to the configured chain (`guilds.json` → `DEFAULT_LOCALE` →
 | `data/locale.json` | Immediate (written by `/language` and reloaded in memory) |
 | `config/guilds.json` or `config/servers.json` | Restart the container: `docker compose restart` (config is read once and cached) |
 | `.env` | `docker compose up -d` (recreates with the new variables) |
-| Commands (`src/commands/`) | `npm run deploy` (global registration) + `docker compose up -d --build` |
+| Commands (`src/commands/`) | `npm run deploy` (global registration) + `docker compose pull && docker compose up -d` |
 
 > `src/config.js` exposes `reloadConfig()`, but no runtime path calls it: hot reload was left out of scope on purpose (restarting takes a second and avoids half-applied states).
