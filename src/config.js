@@ -3,6 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolveAutoStop } from './autostop.js';
+import { BASE_LOCALE, canonicalTag, isSupported } from './i18n/index.js';
 
 const SERVERS_FILE = () => process.env.SERVERS_FILE ?? './config/servers.json';
 const GUILDS_FILE = () => process.env.GUILDS_FILE ?? './config/guilds.json';
@@ -37,6 +38,46 @@ let autoStopOverrides = {};
 
 export function setAutoStopOverrides(next) {
   autoStopOverrides = next ?? {};
+}
+
+// Idioma elegido con /language (se guarda en data/locale.json), por guild.
+let localeOverrides = {};
+
+export function setLocaleOverrides(next) {
+  localeOverrides = next ?? {};
+}
+
+// Idioma efectivo de un guild: override de /language -> guild -> defaults ->
+// DEFAULT_LOCALE del entorno -> idioma base. Un valor que no corresponda a ningún
+// catálogo se ignora (no se sirve medio idioma): se pasa al siguiente candidato.
+export function localeFor(guildId) {
+  ensure();
+  const candidates = [
+    localeOverrides[String(guildId)],
+    guildsFile.guilds?.[String(guildId)]?.locale,
+    guildsFile.defaults?.locale,
+    process.env.DEFAULT_LOCALE,
+    BASE_LOCALE,
+  ];
+  for (const candidate of candidates) {
+    if (isSupported(candidate)) return canonicalTag(candidate);
+  }
+  return BASE_LOCALE;
+}
+
+// De dónde sale el idioma efectivo, para poder explicarlo en /language.
+export function localeSource(guildId) {
+  ensure();
+  const candidates = [
+    ['override', localeOverrides[String(guildId)]],
+    ['guild', guildsFile.guilds?.[String(guildId)]?.locale],
+    ['defaults', guildsFile.defaults?.locale],
+    ['env', process.env.DEFAULT_LOCALE],
+  ];
+  for (const [source, candidate] of candidates) {
+    if (isSupported(candidate)) return source;
+  }
+  return 'base';
 }
 
 // Config efectiva del auto-apagado para un servidor (override -> config -> desactivado).
