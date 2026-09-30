@@ -1,0 +1,29 @@
+{
+  "2": {
+    "alias": "oceanblock",
+    "label": "OceanBlock",
+    "emoji": "🌊"
+  },
+  "4": {
+    "alias": "voxelparty",
+    "label": "Super Voxel Party",
+    "emoji": "🧱"
+  },
+  "5": {
+    "alias": "mcparty2",
+    "label": "Minecraft Party 2",
+    "emoji": "🎉"
+  },
+  "7": {
+    "alias": "gmod",
+    "label": "GMod Party",
+    "emoji": "🔧"
+  },
+  "8": {
+    "alias": "ludopatia",
+    "label": "Ludopatía",
+    "emoji": "🎲",
+    "announce": true,
+    "autoStop": { "hours": 2, "warnMinutes": 15 }
+  }
+}

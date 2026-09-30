@@ -1,0 +1,22 @@
+services:
+  gameap-bot:
+    build:
+      context: .
+      network: host          # BuildKit DNS is broken on this host; host network fixes npm ci
+    container_name: gameap-bot
+    user: "1000:1000"           # same uid as the host user, so ./data stays editable
+    restart: unless-stopped
+    network_mode: host          # UFW blocks container -> host; with host net it reaches 127.0.0.1:8025
+    env_file: .env
+    environment:
+      GAMEAP_API_URL: http://127.0.0.1:8025
+      STATE_FILE: /app/data/state.json
+      FEEDS_STATE_FILE: /app/data/feeds.json
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
