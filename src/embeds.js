@@ -1,6 +1,6 @@
 import { EmbedBuilder } from 'discord.js';
 import { feedTarget, localeFor, serverMeta } from './config.js';
-import { t, plural } from './i18n/index.js';
+import { t, plural, supportedTags } from './i18n/index.js';
 import { formatDuration } from './autostop.js';
 import { log } from './logger.js';
 
@@ -123,6 +123,28 @@ export function playersEmbed(locale, serverId, players) {
     embed.setDescription(players.map((p) => `• ${p}`).join('\n').slice(0, 4000));
   }
   return embed;
+}
+
+// El idioma de este Discord: cuál es, de dónde sale y cuáles hay (/language).
+export function languageEmbed(locale, effective, source) {
+  return new EmbedBuilder()
+    .setColor(COLOR.info)
+    .setTitle(t(locale, 'embeds.language.title'))
+    .setDescription(t(locale, 'embeds.language.description'))
+    .addFields(
+      { name: t(locale, 'embeds.language.current'), value: `**${effective}**`, inline: true },
+      {
+        name: t(locale, 'embeds.language.settingFrom'),
+        value: t(locale, `embeds.language.sources.${source}`),
+        inline: true,
+      },
+      {
+        name: t(locale, 'embeds.language.available'),
+        value: supportedTags().map((tag) => `\`${tag}\``).join(', '),
+      },
+    )
+    .setFooter({ text: t(locale, 'embeds.language.hint') })
+    .setTimestamp();
 }
 
 // --- Auto-apagado por inactividad -------------------------------------------------

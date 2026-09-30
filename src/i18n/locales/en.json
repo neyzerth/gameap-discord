@@ -75,6 +75,21 @@
       "noChannel": "no channel subscribed here — use `/feed` to add one",
       "disableFooter": "Disable with /autostop {alias} hours:0"
     },
+    "language": {
+      "title": "Language",
+      "description": "Everything the bot writes in this Discord uses this language: embeds, warnings and the help.",
+      "current": "Current",
+      "settingFrom": "Setting from",
+      "available": "Available",
+      "hint": "Use `/language locale:es-MX` to change it, or `locale:auto` to go back to the configured language.",
+      "sources": {
+        "override": "`/language` (Discord)",
+        "guild": "`config/guilds.json` (this guild)",
+        "defaults": "`config/guilds.json` (defaults)",
+        "env": "`DEFAULT_LOCALE` (environment)",
+        "base": "bot base language"
+      }
+    },
     "feed": {
       "joined": "🟢 **joined:** {players}",
       "left": "🔴 **left:** {players}",
@@ -92,7 +107,8 @@
     "rconRejected": "Command rejected: line breaks and \";\" are not allowed.",
     "rconSent": "RCON command sent (no output).",
     "rconFailed": "RCON failed: {message}",
-    "unknownCommand": "I do not know a command called `{command}`. Try `/help`."
+    "unknownCommand": "I do not know a command called `{command}`. Try `/help`.",
+    "unknownLocale": "I do not know the language `{locale}`. Available: {available}."
   },
   "feed": {
     "enabled": "✅ Feed for <#{channel}> enabled. The next join/leave will show up here.",
@@ -170,6 +186,14 @@
       "notes": "The command list is generated from the live commands, so it is always up to date.",
       "options": {
         "command": "Get details and examples for one specific command"
+      }
+    },
+    "language": {
+      "description": "Show or change the language the bot writes in, in this Discord",
+      "summary": "per-guild language",
+      "notes": "It changes what the bot writes (embeds, notices, help), not the commands themselves: `/start` is still `/start`. `locale:auto` drops your choice and goes back to the configured language. Operators only.",
+      "options": {
+        "locale": "Language tag, e.g. es-MX (or \"auto\" to go back)"
       }
     }
   },

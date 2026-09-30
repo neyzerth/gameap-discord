@@ -13,7 +13,7 @@ const COLOR = 0x5865f2;
 export const CATEGORIES = [
   { id: 'control', names: ['start', 'stop', 'restart'] },
   { id: 'information', names: ['servers', 'status', 'players'] },
-  { id: 'utility', names: ['rcon', 'feed', 'autostop', 'help'] },
+  { id: 'utility', names: ['rcon', 'feed', 'autostop', 'language', 'help'] },
 ];
 
 // Texto opcional de un comando (solo algunos lo tienen, p. ej. la nota de /rcon).

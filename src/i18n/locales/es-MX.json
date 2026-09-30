@@ -75,6 +75,21 @@
       "noChannel": "no hay canal suscrito aquí — usa `/feed` para añadir uno",
       "disableFooter": "Desactívalo con /autostop {alias} hours:0"
     },
+    "language": {
+      "title": "Idioma",
+      "description": "Todo lo que el bot escribe en este Discord usa este idioma: embeds, avisos y la ayuda.",
+      "current": "Idioma actual",
+      "settingFrom": "Ajuste desde",
+      "available": "Disponibles",
+      "hint": "Usa `/language locale:es-MX` para cambiarlo, o `locale:auto` para volver al idioma configurado.",
+      "sources": {
+        "override": "`/language` (Discord)",
+        "guild": "`config/guilds.json` (este guild)",
+        "defaults": "`config/guilds.json` (defaults)",
+        "env": "`DEFAULT_LOCALE` (entorno)",
+        "base": "idioma base del bot"
+      }
+    },
     "feed": {
       "joined": "🟢 **entró:** {players}",
       "left": "🔴 **salió:** {players}",
@@ -92,7 +107,8 @@
     "rconRejected": "Comando rechazado: no se permiten saltos de línea ni \";\".",
     "rconSent": "Comando RCON enviado (sin salida).",
     "rconFailed": "RCON falló: {message}",
-    "unknownCommand": "No conozco ningún comando llamado `{command}`. Prueba con `/help`."
+    "unknownCommand": "No conozco ningún comando llamado `{command}`. Prueba con `/help`.",
+    "unknownLocale": "No conozco el idioma `{locale}`. Disponibles: {available}."
   },
   "feed": {
     "enabled": "✅ Feed activado para <#{channel}>. El próximo ingreso o salida aparecerá aquí.",
@@ -170,6 +186,14 @@
       "notes": "La lista de comandos se genera con los comandos reales, así que siempre está al día.",
       "options": {
         "command": "Ver detalles y ejemplos de un comando en concreto"
+      }
+    },
+    "language": {
+      "description": "Muestra o cambia el idioma en el que escribe el bot en este Discord",
+      "summary": "idioma por guild",
+      "notes": "Cambia lo que escribe el bot (embeds, avisos, ayuda), no los comandos: `/start` sigue siendo `/start`. `locale:auto` quita tu elección y vuelve al idioma configurado. Solo operadores.",
+      "options": {
+        "locale": "Etiqueta de idioma, por ejemplo es-MX (o \"auto\" para volver)"
       }
     }
   },

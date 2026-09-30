@@ -1,8 +1,8 @@
 import { Client, GatewayIntentBits, Events, MessageFlags } from 'discord.js';
 import { startWatcher } from './watcher.js';
 import { loadCommands } from './registry.js';
-import { save, loadFeeds, loadAutoStop, getState } from './state.js';
-import { setOverrides, setAutoStopOverrides, localeFor } from './config.js';
+import { save, loadFeeds, loadAutoStop, loadLocales, getState } from './state.js';
+import { setOverrides, setAutoStopOverrides, setLocaleOverrides, localeFor } from './config.js';
 import { t } from './i18n/index.js';
 import { log } from './logger.js';
 
@@ -18,6 +18,7 @@ async function main() {
   requireEnv();
   setOverrides(loadFeeds());
   setAutoStopOverrides(loadAutoStop());
+  setLocaleOverrides(loadLocales());
 
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
   client.commands = await loadCommands();

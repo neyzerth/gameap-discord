@@ -1,8 +1,8 @@
 import { rconFeatures, playerNames, serverStatus, stopServer } from './gameap.js';
 import {
-  pollTargets, feedTarget, autoStopConfig, setOverrides, setAutoStopOverrides,
+  pollTargets, feedTarget, autoStopConfig, setOverrides, setAutoStopOverrides, setLocaleOverrides,
 } from './config.js';
-import { getState, save, diff, loadFeeds, loadAutoStop } from './state.js';
+import { getState, save, diff, loadFeeds, loadAutoStop, loadLocales } from './state.js';
 import { announcePlayers, fanOut, autostopWarningEmbed, autoStopEmbed } from './embeds.js';
 import { accumulateIdle, evaluateIdle, formatDuration, newIdle } from './autostop.js';
 import { log } from './logger.js';
@@ -27,6 +27,7 @@ export function startWatcher(client) {
   const state = getState();
   setOverrides(loadFeeds());
   setAutoStopOverrides(loadAutoStop());
+  setLocaleOverrides(loadLocales());
   let busy = false;
   const lastPollAt = new Map(); // serverId -> ms del último intento (delta del reloj de inactividad)
 
