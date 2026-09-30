@@ -129,6 +129,7 @@ export function createTranslator(catalogs, { base = BASE_LOCALE, onMissing = () 
   return {
     t,
     plural,
+    has: (locale, key) => lookup(locale, key) !== undefined,
     missing,
     extra,
     resolve,

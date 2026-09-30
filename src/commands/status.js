@@ -5,21 +5,26 @@ import { autocompleteServers, resolveServerOption } from '../control.js';
 import { autoStopConfig, localeFor } from '../config.js';
 import { evaluateIdle } from '../autostop.js';
 import { getState } from '../state.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('status')
-  .setDescription('Show one server in detail: state, players, RCON support')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('status')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'status',
+        'server',
+      ),
+    ),
+  'status',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
   examples: ['/status mc-survival', '/status 8'],
-  notes:
-    'One server in detail: state, player count, who is online and whether RCON works for that game. For the whole list use `/servers`.',
 };
 
 export async function execute(interaction) {

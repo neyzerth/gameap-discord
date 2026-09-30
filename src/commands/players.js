@@ -4,21 +4,26 @@ import { playersEmbed } from '../embeds.js';
 import { autocompleteServers, resolveServerOption } from '../control.js';
 import { localeFor } from '../config.js';
 import { t } from '../i18n/index.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('players')
-  .setDescription('List the players online right now (via RCON)')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('players')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'players',
+        'server',
+      ),
+    ),
+  'players',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
   examples: ['/players mc-survival', '/players 8'],
-  notes:
-    'If the server is stopped it answers "RCON unavailable: the server is stopped" instead of an error; same if the game cannot list players (like some modded setups).',
 };
 
 export async function execute(interaction) {

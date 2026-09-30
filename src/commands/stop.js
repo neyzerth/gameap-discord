@@ -1,20 +1,25 @@
 import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { autocompleteServers, runControl } from '../control.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('stop')
-  .setDescription('Stop a game server (asks for confirmation when players are online)')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('stop')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'stop',
+        'server',
+      ),
+    ),
+  'stop',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
   examples: ['/stop mc-survival', '/stop 8'],
-  notes:
-    'If somebody is playing, the bot shows the online players and waits for a Confirm/Cancel button (60 seconds) before stopping. Use it as a "save everyone first" guard, or `/rcon mc-survival say server restarts in 1 min` before.',
 };
 
 export async function execute(interaction) {

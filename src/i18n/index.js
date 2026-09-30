@@ -52,6 +52,10 @@ export const plural = translator.plural;
 export const missingKeys = translator.missing;
 export const extraKeys = translator.extra;
 
+// ¿Está definida esta clave? Para textos opcionales (una nota de /help que solo
+// algunos comandos tienen): sin esto, t() avisaría de una clave que no existe.
+export const has = translator.has;
+
 export function isSupported(locale) {
   return translator.resolve(locale) !== null;
 }
