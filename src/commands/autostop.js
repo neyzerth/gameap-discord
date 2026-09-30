@@ -32,10 +32,10 @@ export const autocomplete = autocompleteServers;
 export const help = {
   summary: 'auto-shutdown when nobody plays',
   examples: [
-    '/autostop ludopatia',
-    '/autostop ludopatia hours:2 warn:15',
-    '/autostop ludopatia hours:2 warn:0',
-    '/autostop ludopatia hours:0',
+    '/autostop mc-survival',
+    '/autostop mc-survival hours:2 warn:15',
+    '/autostop mc-survival hours:2 warn:0',
+    '/autostop mc-survival hours:0',
   ],
   notes:
     'The clock only counts while the server is up with 0 players; if it is off, or the panel cannot tell, the clock resets. Anyone joining resets it, and 10 minutes of grace apply after /start, /stop or /restart. Operators only.',

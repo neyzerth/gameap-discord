@@ -12,7 +12,7 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  examples: ['/start ludopatia', '/start 8'],
+  examples: ['/start mc-survival', '/start 8'],
   notes:
     'Shows a progress embed until the panel reports the server as running. A big modded Minecraft server takes 1-2 minutes to be ready; if it takes longer the embed tells you to check the panel.',
 };

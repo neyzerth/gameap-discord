@@ -1,145 +1,149 @@
-# Operación
+**English** · [Español](es/operations.md)
 
-Runbook del bot: desplegar, actualizar, rotar credenciales y diagnosticar. Todo se ejecuta desde
-`/opt/dockge/stacks/gameap-bot` (visible también desde Dockge).
+# Operation
 
-## Requisitos
+Bot runbook: deploy, update, rotate credentials, and diagnose. Everything runs from
+`/opt/gameap-discord-bot` (also visible from Dockge).
 
-| Cosa | Detalle |
+## Requirements
+
+| Item | Detail |
 |---|---|
-| Docker + compose | El bot corre en el contenedor `gameap-bot` (`network_mode: host`) |
-| Node 22 en el host | Solo para `npm run deploy` y `npm test` (el runtime vive en la imagen) |
-| PAT del panel | Con las 6 abilities de [gameap-api.md](gameap-api.md#abilities-necesarias) |
-| Bot de Discord | Token propio; permisos View Channel, Send Messages, Embed Links, Read Message History |
+| Docker + compose | The bot runs in the `gameap-bot` container (`network_mode: host`) |
+| Node 22 on the host | Only for `npm run deploy` and `npm test` (the runtime lives in the image) |
+| Panel PAT | With the 6 abilities from [gameap-api.md](gameap-api.md#required-pat-abilities) |
+| Discord bot | Own token; View Channel, Send Messages, Embed Links, Read Message History permissions |
 
-## Despliegue
+## Deployment
 
 ```bash
-cd /opt/dockge/stacks/gameap-bot
-cp .env.example .env && chmod 600 .env     # y rellenar DISCORD_TOKEN + GAMEAP_TOKEN
+cd /opt/gameap-discord-bot
+cp .env.example .env && chmod 600 .env     # and fill in DISCORD_TOKEN + GAMEAP_TOKEN
+cp config/servers.example.json config/servers.json    # and edit the real alias/label/ids
+cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 19 tests, deben pasar antes de desplegar
-npm run deploy                             # registra los comandos GLOBALES
+npm test                                   # 19 tests, must pass before deploying
+npm run deploy                             # registers the GLOBAL commands
 docker compose up -d --build
 docker logs -f gameap-bot                  # "loaded 9 commands" + "logged in as ... — N guild(s)"
 ```
 
-Detalles del `compose.yaml` que no son cosméticos:
+Details in the `compose.yaml` that are not cosmetic:
 
-- `network_mode: host` — UFW bloquea contenedor → host; así el bot alcanza `127.0.0.1:8025`.
-- `build.network: host` — BuildKit no resuelve DNS en este host; `npm ci` dentro del build fallaba.
-- `user: "1000:1000"` — el mismo uid del usuario del host, para que `./data` no quede root-owned.
-- `logging` con `max-size: 10m` / `max-file: 3` — el log no crece sin control.
+- `network_mode: host` — UFW blocks container → host; this way the bot reaches `127.0.0.1:8025`.
+- `build.network: host` — BuildKit can't resolve DNS on this host; `npm ci` inside the build used to fail.
+- `user: "1000:1000"` — the same uid as the host user, so `./data` doesn't end up root-owned.
+- `logging` with `max-size: 10m` / `max-file: 3` — the log doesn't grow unchecked.
 
-## Actualizar código
+## Updating the code
 
 ```bash
-cd /opt/dockge/stacks/gameap-bot
-git pull                     # o edita los archivos directamente
+cd /opt/gameap-discord-bot
+git pull                     # or edit the files directly
 npm test
-docker compose up -d --build # reconstruye y recrea
+docker compose up -d --build # rebuilds and recreates
 ```
 
-Si tocaste `src/commands/` (nombre, descripción u opciones), **además**:
+If you touched `src/commands/` (name, description, or options), **also**:
 
 ```bash
 npm run deploy
 ```
 
-## Registro de comandos: una sola fuente
+## Command registration: a single source
 
 ```mermaid
 flowchart TD
-  A["¿dónde registro?"] --> B{"¿quieres que funcione<br/>en todos los guilds?"}
-  B -- sí --> C["npm run deploy<br/>global"]
-  B -- "no, solo uno y ya" --> D["node --env-file=.env src/deploy-commands.js --guild ID"]
-  C --> E["puede tardar hasta ~1 h en refrescar<br/>en el cliente"]
-  D --> F["instantáneo en ese guild"]
-  C --> G["NUNCA las dos cosas del mismo comando"]
+  A["where do I register?"] --> B{"do you want it to work<br/>in all guilds?"}
+  B -- yes --> C["npm run deploy<br/>global"]
+  B -- "no, just one and done" --> D["node --env-file=.env src/deploy-commands.js --guild ID"]
+  C --> E["can take up to ~1 h to refresh<br/>in the client"]
+  D --> F["instant in that guild"]
+  C --> G["NEVER both for the same command"]
   D --> G
-  G --> H["si pasó: vacía un lado<br/>PUT .../commands con [] y Ctrl+R en Discord"]
+  G --> H["if it happened: empty one side<br/>PUT .../commands with [] and Ctrl+R in Discord"]
 ```
 
-Vaciar el registro por guild de un servidor (requiere el token del bot):
+Clearing the per-guild registration of a server (requires the bot token):
 
 ```bash
 curl -X PUT "https://discord.com/api/v10/applications/<APP_ID>/guilds/<GUILD_ID>/commands" \
-  -H "Authorization: Bot $DISCORD_TOKEN" -H 'Content-Type: application/json' -d '[]'
+  -H "Authorization: Bot ***" -H 'Content-Type: application/json' -d '[]'
 ```
 
-Los globales se cambian con `npm run deploy`. Si el cliente muestra comandos viejos o duplicados,
-`Ctrl+R` en Discord limpia la caché local.
+Globals are changed with `npm run deploy`. If the client shows old or duplicated commands,
+`Ctrl+R` in Discord clears the local cache.
 
-## Credenciales
+## Credentials
 
-| Secreto | Dónde | Rotación |
+| Secret | Where | Rotation |
 |---|---|---|
-| `DISCORD_TOKEN` | `.env` (chmod 600) | Developer Portal → Bot → Reset Token → actualizar `.env` → `docker compose up -d` |
-| `GAMEAP_TOKEN` (PAT) | `.env` | Panel → Perfil → API tokens → crear uno nuevo con las mismas abilities, ponerlo en `.env`, recrear el contenedor y revocar el viejo |
+| `DISCORD_TOKEN` | `.env` (chmod 600) | Developer Portal → Bot → Reset Token → update `.env` → `docker compose up -d` |
+| `GAMEAP_TOKEN` (PAT) | `.env` | Panel → Profile → API tokens → create a new one with the same abilities, put it in `.env`, recreate the container, and revoke the old one |
 
-Reglas: el `.env` nunca va al repo (ya está en `.gitignore`), los logs no imprimen tokens, y el PAT
-del panel se debe crear con **solo** las 6 abilities necesarias.
+Rules: `.env` never goes into the repo (it's already in `.gitignore`), logs never print tokens,
+and the panel PAT must be created with **only** the 6 required abilities.
 
-## Añadir un Discord nuevo (guild)
+## Adding a new Discord guild
 
-1. Invitar el bot con el enlace del portal:
+1. Invite the bot with the portal link:
    `https://discord.com/oauth2/authorize?client_id=<APP_ID>&scope=bot%20applications.commands&permissions=84992`
-   (permisos: View Channel 1024 + Send Messages 2048 + Embed Links 16384 + Read Message History 65536).
-2. Leer los logs: al entrar, el bot imprime `joined guild <nombre> (<id>) — text channels: #canal(<id>) …`.
-3. Agregar el bloque en `config/guilds.json` (opcional: sin bloque funciona con los defaults, pero
-   sin feed):
+   (permissions: View Channel 1024 + Send Messages 2048 + Embed Links 16384 + Read Message History 65536).
+2. Read the logs: on entry, the bot prints `joined guild <name> (<id>) — text channels: #channel(<id>) …`.
+3. Add the entry in `config/guilds.json` (optional: without an entry it works with the defaults, but
+   without a feed):
 
 ```json
 "<GUILD_ID>": { "feedChannelId": "<CHANNEL_ID>", "servers": ["8"], "operatorRoleIds": [] }
 ```
 
-4. `docker compose restart gameap-bot` y verificar `— 2 guild(s)` en el log.
-5. Prueba real: inyectar un jugador ficticio en `data/state.json` y reiniciar (ver
-   [development.md](development.md#probar-el-feed-sin-jugadores-reales)).
+4. `docker compose restart gameap-bot` and check for `— 2 guild(s)` in the log.
+5. Real test: inject a fake player in `data/state.json` and restart (see
+   [development.md](development.md#testing-the-feed-without-real-players)).
 
-## Añadir un game server
+## Adding a game server
 
-1. En `config/servers.json`, añadir el id del panel con `alias`, `label`, `emoji` y `announce`:
+1. In `config/servers.json`, add the panel id with `alias`, `label`, `emoji`, and `announce`:
 
 ```json
 "11": { "alias": "valheim", "label": "Valheim", "emoji": "🪓", "announce": true }
 ```
 
-2. `docker compose restart gameap-bot` (la config se cachea al arrancar).
-3. Comprobar `/servers` y, si quieres feed, `/feed valheim on` en el canal.
-4. Si el juego no soporta listar jugadores, el watcher lo detecta y lo deja fuera del feed con un
-   aviso en los logs (una sola vez).
+2. `docker compose restart gameap-bot` (config is cached at startup).
+3. Check `/servers` and, if you want a feed, `/feed valheim on` in the channel.
+4. If the game doesn't support listing players, the watcher detects it and leaves it out of the
+   feed with a warning in the logs (once only).
 
-## Logs y diagnóstico
+## Logs and diagnostics
 
 ```bash
-docker logs --tail 50 gameap-bot          # lo normal: loaded N commands, logged in, baselines
-docker logs -f gameap-bot | grep -i warn  # problemas de panel/RCON/canales
+docker logs --tail 50 gameap-bot          # normal: loaded N commands, logged in, baselines
+docker logs -f gameap-bot | grep -i warn  # panel/RCON/channel issues
 docker inspect gameap-bot --format 'restarts={{.RestartCount}} status={{.State.Status}}'
-docker stats --no-stream gameap-bot       # huella: ~30 MB de RAM, CPU casi 0
+docker stats --no-stream gameap-bot       # footprint: ~30 MB RAM, CPU almost 0
 ```
 
-Para más detalle, poner `LOG_LEVEL=debug` en `.env` y recrear: así se ven los ciclos con servidor
-apagado (`server 8 is offline; skipping poll`).
+For more detail, set `LOG_LEVEL=debug` in `.env` and recreate: you'll see the cycles with the
+server off (`server 8 is offline; skipping poll`).
 
-| Síntoma | Causa probable | Arreglo |
+| Symptom | Likely cause | Fix |
 |---|---|---|
-| `DISCORD_TOKEN is required` / `GAMEAP_TOKEN is required` | `.env` sin la variable (o env_file mal) | Rellenar `.env`, `docker compose up -d` |
-| `Command failed` en todos los comandos | PAT sin abilities o panel caído | `curl /api/servers` con el PAT; revisar abilities |
-| Los comandos no aparecen en Discord | Registro global sin propagar | `Ctrl+R`; `/help` en un canal; verificar `npm run deploy` |
-| Aparecen comandos **duplicados** | Registro global + por guild, o app con *user install* | Vaciar el set por guild (arriba) y desactivar user install en el portal; `Ctrl+R` |
-| El feed nunca publica | Sin `announce: true`, sin `feedTarget()`, o `unsupported` | `docker logs` (busca `baseline server`), `/feed <server> on` |
-| `could not announce to <id>` | El bot sin permisos en ese canal | Dar View Channel + Send Messages + Embed Links |
-| El contenedor reinicia en bucle | Token inválido o `.env` con comillas | `docker logs --tail 20` (sale el error de login) |
-| El servidor se apaga solo | Auto-apagado por inactividad (`/autostop`) | `/autostop <server>` y el canal del feed: el aviso previo explica el motivo |
-| `/autostop` no apaga nada | `hours: 0`, o el reloj se reinicia por sondeos fallidos | `/autostop <server>` (mira `Idle now`), `LOG_LEVEL=debug` |
-| `AUTOSTOP_DRY_RUN=true` y no aplica | Las variables del contenedor se fijan al crearlo | `docker compose up -d --force-recreate` y `docker exec gameap-bot printenv AUTOSTOP_DRY_RUN` |
-| `/start` no arranca nada y el embed se queda "Starting…" | **FIFO viejo del socket systemd** (ver abajo) o otro Minecraft corriendo (límite del host) | `/srv/gameap/fix-gameap-server-start.sh --check <uuid>`; revisar la consola en el panel |
+| `DISCORD_TOKEN is required` / `GAMEAP_TOKEN is required` | `.env` missing the variable (or a bad env_file) | Fill `.env`, `docker compose up -d` |
+| `Command failed` on all commands | PAT without abilities, or panel down | `curl /api/servers` with the PAT; check abilities |
+| Commands don't show up in Discord | Global registration hasn't propagated | `Ctrl+R`; `/help` in a channel; verify `npm run deploy` |
+| Duplicated commands appear | Global + per-guild registration, or app with *user install* | Clear the per-guild set (above) and disable user install in the portal; `Ctrl+R` |
+| The feed never publishes | No `announce: true`, no `feedTarget()`, or `unsupported` | `docker logs` (look for `baseline server`), `/feed <server> on` |
+| `could not announce to <id>` | Bot lacks permissions in that channel | Grant View Channel + Send Messages + Embed Links |
+| Container restarts in a loop | Invalid token or quotes in `.env` | `docker logs --tail 20` (the login error shows up) |
+| The server shuts itself down | Auto-stop by inactivity (`/autostop`) | `/autostop <server>` and the feed channel: the earlier notice explains why |
+| `/autostop` doesn't stop anything | `hours: 0`, or the clock keeps resetting on failed polls | `/autostop <server>` (look at `Idle now`), `LOG_LEVEL=debug` |
+| `AUTOSTOP_DRY_RUN=true` and it doesn't apply | Container variables are set when the container is created | `docker compose up -d --force-recreate` and `docker exec gameap-bot printenv AUTOSTOP_DRY_RUN` |
+| `/start` starts nothing and the embed stays "Starting…" | **Old systemd socket FIFO** (see below) or another Minecraft running (host limit) | `/srv/gameap/fix-gameap-server-start.sh --check <uuid>`; check the console in the panel |
 
-### `/start` falla siempre y el panel tampoco arranca: FIFO huérfano
+### `/start` always fails and the panel won't start it either: orphaned FIFO
 
-Síntoma en el panel/API: la tarea `gsstart` sale `success` pero el servidor no arranca (o el panel
-devuelve error). En el journal:
+Symptom in the panel/API: the `gsstart` task exits `success` but the server doesn't start (or the
+panel returns an error). In the journal:
 
 ```
 gameap-server-<uuid>.socket: Failed to open FIFO /srv/gameap/.systemd-services/<uuid>.stdin: File exists
@@ -147,57 +151,58 @@ gameap-server-<uuid>.socket: Failed with result 'resources'.
 gameap-server-<uuid>.service: Start request repeated too quickly / Failed with result 'start-limit-hit'
 ```
 
-Causa **exacta** (leída en `src/core/socket.c` de systemd 255, `fifo_address_create`): al enlazar un
-`ListenFIFO`, systemd acepta un FIFO que ya exista **solo si** es un FIFO, su modo es exactamente
-`SocketMode & ~umask` **usando la umask del proceso systemd** y uid/gid son los de systemd. Si no,
-devuelve `-EEXIST` → *"Failed to open FIFO …: File exists"*. En este host la umask de PID1 es
-**0000** (`/proc/1/status`), así que el modo exigido es **0666**; cualquier FIFO en 0664/0644/0600
-falla. Consecuencia: socket `failed`; el servicio arranca **sin socket** (`Got no socket` en el
-journal), sale al instante y, con `Restart=always`, cae en `start-limit-hit`. La tarea `gsstart` del
-panel sale `success` igual, así que el error puede aparecer minutos después del intento.
+**Exact** cause (read in systemd 255's `src/core/socket.c`, `fifo_address_create`): when binding a
+`ListenFIFO`, systemd accepts an already-existing FIFO **only if** it is a FIFO, its mode is exactly
+`SocketMode & ~umask` **using the systemd process's umask** and the uid/gid are systemd's. If not,
+it returns `-EEXIST` → *"Failed to open FIFO …: File exists"*. On this host PID1's umask is
+**0000** (`/proc/1/status`), so the required mode is **0666**; any FIFO at 0664/0644/0600
+fails. Consequence: the socket is `failed`; the service starts **without a socket** (`Got no
+socket` in the journal), exits immediately and, with `Restart=always`, falls into
+`start-limit-hit`. The panel's `gsstart` task still exits `success`, so the error may only
+show up minutes after the attempt.
 
-> **Ojo con `UMask=` en el unit `.socket`**: systemd aplica la umask de la unidad al crear el nodo,
-> pero compara contra la umask del proceso. Poner `UMask=0002` hace que systemd cree el FIFO en 0664
-> y lo rechace él mismo después. La documentación de este stack llevó `UMask=0002` un rato: era
-> incorrecto y solo cambiaba un EEXIST por otro. Lo correcto es `UMask=0000` (lo creado y lo exigido
-> coinciden en 0666).
+> **Beware of `UMask=` in the `.socket` unit**: systemd applies the unit's umask when creating the
+> node, but compares against the process umask. Setting `UMask=0002` makes systemd create the FIFO
+> at 0664 and reject it afterwards. This stack's docs carried `UMask=0002` for a while: it was
+> wrong and only traded one EEXIST for another. The correct setting is `UMask=0000` (what's
+> created and what's required match at 0666).
 
-Arreglo (una vez por servidor, con sudo):
-
-```bash
-sudo /srv/gameap/fix-gameap-server-start.sh <uuid>     # borra el FIFO, resetea unidades, deja drop-in
-# luego /start desde el panel o Discord
-```
-
-El script instala un drop-in `…<uuid>.socket.d/override.conf` con **`UMask=0000`**, un `ExecStartPre`
-que borra restos y pre-crea el FIFO en 0666 (`rm -f …; mkfifo -m 0666 …; chmod 0666 …`) y
-`RemoveOnStop=true`. Los drop-ins sobreviven a que el daemon reescriba el unit en cada arranque. El
-daemon de GameAP **no** crea FIFOs (no hay `mkfifo` en su código), así que nadie compite por el
-archivo.
-
-**Plan B** si el FIFO sigue dando guerra: `sudo /srv/gameap/fix-gameap-server-start.sh --no-socket
-<uuid>` quita la dependencia del socket en el `.service` (`Sockets=` vacío + `StandardInput=null`).
-El servidor arranca siempre; se pierde el **envío** de comandos por la consola del panel (leer el log
-sigue funcionando y RCON no se toca).
-
-Los uuid: `ls /etc/systemd/system | grep 'gameap-server-.*\.socket$'`.
-
-## Respaldos
-
-Lo que vale la pena respaldar: `config/` (catálogo y guilds) y, opcionalmente, `data/` (estado del
-feed). El `.env` va aparte, cifrado, porque tiene los secretos.
+Fix (once per server, with sudo):
 
 ```bash
-tar czf /mnt/storage/backups/gameap-bot-config-$(date +%F).tar.gz -C /opt/dockge/stacks/gameap-bot config .env
+sudo /srv/gameap/fix-gameap-server-start.sh <uuid>     # deletes the FIFO, resets units, installs a drop-in
+# then /start from the panel or Discord
 ```
 
-`data/state.json` y `data/feeds.json` son desechables: se recrean y solo provocan un baseline
-silencioso.
+The script installs a drop-in `…<uuid>.socket.d/override.conf` with **`UMask=0000`**, an
+`ExecStartPre` that removes leftovers and pre-creates the FIFO at 0666 (`rm -f …; mkfifo -m 0666 …;
+chmod 0666 …`) and `RemoveOnStop=true`. Drop-ins survive the daemon rewriting the unit at every
+boot. The GameAP daemon does **not** create FIFOs (there's no `mkfifo` in its code), so nobody
+competes for the file.
 
-## Checklist después de cualquier cambio
+**Plan B** if the FIFO keeps fighting: `sudo /srv/gameap/fix-gameap-server-start.sh --no-socket
+<uuid>` removes the socket dependency on the `.service` (empty `Sockets=` + `StandardInput=null`).
+The server always starts; you lose **sending** commands through the panel console (reading the log
+still works and RCON is untouched).
 
-- [ ] `npm test` en verde (19 tests)
-- [ ] `docker logs --tail 10` sin `ERROR`, con `loaded 9 commands` y `— N guild(s)`
-- [ ] `docker inspect ... RestartCount` en 0
-- [ ] Un comando real probado (`/servers` y `/players <server>`)
-- [ ] Si tocaste el feed: inyectar un jugador ficticio y ver el aviso en el canal correcto
+The uuids: `ls /etc/systemd/system | grep 'gameap-server-.*\\.socket$'`.
+
+## Backups
+
+What's worth backing up: `config/` (catalog and guilds) and, optionally, `data/` (feed state).
+`.env` goes separately, encrypted, because it holds the secrets.
+
+```bash
+tar czf /var/backups/gameap-bot-config-$(date +%F).tar.gz -C /opt/gameap-discord-bot config .env
+```
+
+`data/state.json` and `data/feeds.json` are disposable: they get recreated and only trigger a
+quiet baseline.
+
+## Checklist after any change
+
+- [ ] `npm test` green (19 tests)
+- [ ] `docker logs --tail 10` without `ERROR`, with `loaded 9 commands` and `— N guild(s)`
+- [ ] `docker inspect ... RestartCount` at 0
+- [ ] A real command tested (`/servers` and `/players <server>`)
+- [ ] If you touched the feed: inject a fake player and see the notice in the right channel

@@ -2,6 +2,20 @@
   "name": "gameap-discord-bot",
   "version": "0.1.0",
   "private": true,
+  "description": "Discord bot for GameAP: start, stop and restart game servers, run RCON commands and announce player joins and leaves.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/neyzerth/gameap-discord.git"
+  },
+  "keywords": [
+    "gameap",
+    "discord",
+    "discord-bot",
+    "game-server",
+    "rcon",
+    "self-hosted"
+  ],
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -9,7 +23,8 @@
   "scripts": {
     "start": "node src/index.js",
     "deploy": "node --env-file=.env src/deploy-commands.js",
-    "test": "node --test src/*.test.js"
+    "test": "node --test src/*.test.js",
+    "check:docs": "node scripts/check-docs.mjs"
   },
   "dependencies": {
     "discord.js": "^14.16.3"

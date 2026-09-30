@@ -1,26 +1,28 @@
-# La API de GameAP que usa el bot
+**English** · [Español](es/gameap-api.md)
 
-Todo el tráfico va por HTTP contra el panel. El bot **no** habla con el daemon ni con los puertos
-de juego, y **no** abre ningún puerto: usa `GAMEAP_API_URL` (por defecto `http://127.0.0.1:8025`).
+# The GameAP API the bot uses
 
-## Autenticación
+All traffic goes over HTTP to the panel. The bot does **not** talk to the daemon or to the game
+ports, and it **does not** open any port: it uses `GAMEAP_API_URL` (by default `http://127.0.0.1:8025`).
 
-El panel acepta el PAT en la cabecera `Authorization`, con el esquema `Bearer`:
+## Authentication
+
+The panel accepts the PAT in the `Authorization` header, with the `Bearer` scheme:
 
 ```bash
 curl -s http://127.0.0.1:8025/api/servers \
-  -H "Authorization: Bearer $GAMEAP_TOKEN"
+  -H "Authorization: Bearer ***"
 ```
 
-- El PAT se genera en el panel: **Perfil → API tokens** (Personal Access Tokens), eligiendo las
-  abilities de la tabla de abajo.
-- `src/gameap.js` toma el token de `GAMEAP_TOKEN` y **nunca** lo loguea (los logs solo muestran
-  mensajes y códigos de estado).
-- Token inválido/expirado → el panel responde 401/403 y el bot propaga el mensaje del panel.
+- The PAT is generated in the panel: **Profile → API tokens** (Personal Access Tokens), choosing the
+  abilities from the table below.
+- `src/gameap.js` takes the token from `GAMEAP_TOKEN` and **never** logs it (the logs only show
+  messages and status codes).
+- Invalid/expired token → the panel answers 401/403 and the bot relays the panel's message.
 
-## Abilities necesarias
+## Required PAT abilities
 
-| Ability | Para qué |
+| Ability | Used for |
 |---|---|
 | `server:list` | `/servers` |
 | `server:start` | `/start` |
@@ -29,11 +31,11 @@ curl -s http://127.0.0.1:8025/api/servers \
 | `server:rcon-players` | `/players`, `/status`, watcher |
 | `server:rcon-console` | `/rcon` |
 
-Si falta una ability, el comando correspondiente falla con el error del panel (403).
+If an ability is missing, the corresponding command fails with the panel's error (403).
 
 ## Endpoints
 
-| Método y ruta | Devuelve | Lo usa |
+| Method and route | Returns | Used by |
 |---|---|---|
 | `GET /api/servers?page=1&per_page=50` | `{ data: [ { id, name, game_id, server_ip, server_port, ... } ] }` | `/servers` |
 | `GET /api/servers/{id}/status` | `{ processActive: boolean, ... }` | `/status`, `/players`, control, watcher |
@@ -42,45 +44,45 @@ Si falta una ability, el comando correspondiente falla con el error del panel (4
 | `POST /api/servers/{id}/restart` | `{ task_id }` | `/restart` |
 | `GET /api/servers/{id}/rcon/features` | `{ rcon, playersManage, playersList, playersKick, playersBan }` | `/status`, `/players`, watcher |
 | `GET /api/servers/{id}/rcon/players` | `[ { id, name, score, ping, ip } ]` | `/players`, `/status`, watcher |
-| `POST /api/servers/{id}/rcon` con `{ "command": "list" }` | `{ output: "..." }` | `/rcon` |
+| `POST /api/servers/{id}/rcon` with `{ "command": "list" }` | `{ output: "..." }` | `/rcon` |
 
-El `task_id` de start/stop/restart es el de la tarea del daemon: el bot lo muestra en el pie del
-embed (`Daemon task #123`) y sigue el estado por `status` hasta 120 s.
+The `task_id` of start/stop/restart is the daemon task id: the bot shows it in the footer of the
+embed (`Daemon task #123`) and follows the state via `status` for up to 120 s.
 
-## Por qué no hay webhooks
+## Why there are no webhooks
 
-GameAP v4 no expone webhooks (0 coincidencias en el código del panel). Los eventos del plugin WASM
-cubren `SERVER_POST_START`, `SERVER_POST_STOP`, `SERVER_POST_RESTART`, tareas del daemon, nodos y
-usuarios, pero **no** hay evento de entrada/salida de jugadores. Por eso la detección de
-entradas/salidas vive en el bot, con polling de `rcon/players` (ver [feed.md](feed.md)).
+GameAP v4 does not expose webhooks (0 matches in the panel code). The WASM plugin events
+cover `SERVER_POST_START`, `SERVER_POST_STOP`, `SERVER_POST_RESTART`, daemon tasks, nodes and
+users, but there is **no** player join/leave event. That is why join/leave detection lives in
+the bot, with polling of `rcon/players` (see [feed.md](feed.md)).
 
-Si algún día aparece un webhook de jugadores, el punto de entrada a cambiar es el ciclo de
-`src/watcher.js`: la lógica de diff/fan-out ya está separada en `src/state.js` y `src/embeds.js`.
+If a player webhook ever appears, the entry point to change is the `src/watcher.js` loop: the
+diff/fan-out logic is already separated into `src/state.js` and `src/embeds.js`.
 
-## Manejo de errores en el cliente
+## Error handling in the client
 
-`src/gameap.js` centraliza todo:
+`src/gameap.js` centralizes everything:
 
-- `AbortSignal.timeout(15000)` → si el panel no contesta en 15 s, la promesa rechaza.
-- La respuesta se parsea como JSON; si no es JSON, se devuelve `{ raw: texto }`.
-- `!res.ok` → `Error` con `.status` (código HTTP) y el mensaje del panel
-  (`error` o `message` del cuerpo, si existen). Ese `.status` se muestra en los embeds de error
-  (`RCON failed: 422 ...`) y en los logs (`no player data (500) ...`).
-- El watcher trata cualquier fallo como `unknown` (silencio) y consulta `status` solo para
-  distinguir "está apagado" de "el panel/RCON falló".
+- `AbortSignal.timeout(15000)` → if the panel does not answer within 15 s, the promise rejects.
+- The response is parsed as JSON; if it is not JSON, `{ raw: text }` is returned.
+- `!res.ok` → `Error` with `.status` (HTTP code) and the panel's message
+  (`error` or `message` from the body, if they exist). That `.status` is shown in the error embeds
+  (`RCON failed: 422 ...`) and in the logs (`no player data (500) ...`).
+- The watcher treats any failure as `unknown` (silent) and only queries `status` to
+  distinguish "it is stopped" from "the panel/RCON failed".
 
-## Cómo probar la API a mano
+## How to test the API by hand
 
 ```bash
-# estado y jugadores
-curl -s http://127.0.0.1:8025/api/servers/8/status  -H "Authorization: Bearer $GAMEAP_TOKEN"
-curl -s http://127.0.0.1:8025/api/servers/8/rcon/players -H "Authorization: Bearer $GAMEAP_TOKEN"
+# status and players
+curl -s http://127.0.0.1:8025/api/servers/8/status  -H "Authorization: Bearer ***"
+curl -s http://127.0.0.1:8025/api/servers/8/rcon/players -H "Authorization: Bearer ***"
 
-# un comando RCON (equivalente a /rcon ludopatia list)
+# an RCON command (equivalent to /rcon mc-survival list)
 curl -s -X POST http://127.0.0.1:8025/api/servers/8/rcon \
-  -H "Authorization: Bearer $GAMEAP_TOKEN" -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer ***" -H 'Content-Type: application/json' \
   -d '{"command":"list"}'
 ```
 
-Referencias: documentación oficial <https://docs.gameap.com/> y la especificación OpenAPI del
-panel (`openapi.yaml` en `/srv/gameap`).
+References: official documentation <https://docs.gameap.com/> and the panel's OpenAPI
+specification (`openapi.yaml` in `/srv/gameap`).

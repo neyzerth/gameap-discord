@@ -12,7 +12,7 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  examples: ['/restart ludopatia', '/restart 8'],
+  examples: ['/restart mc-survival', '/restart 8'],
   notes:
     'Same confirmation as `/stop`. The embed follows the process until it comes back up (a modded Minecraft server can take 1-2 minutes).',
 };

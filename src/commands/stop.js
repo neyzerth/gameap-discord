@@ -12,9 +12,9 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  examples: ['/stop ludopatia', '/stop 8'],
+  examples: ['/stop mc-survival', '/stop 8'],
   notes:
-    'If somebody is playing, the bot shows the online players and waits for a Confirm/Cancel button (60 seconds) before stopping. Use it as a "save everyone first" guard, or `/rcon ludopatia say server restarts in 1 min` before.',
+    'If somebody is playing, the bot shows the online players and waits for a Confirm/Cancel button (60 seconds) before stopping. Use it as a "save everyone first" guard, or `/rcon mc-survival say server restarts in 1 min` before.',
 };
 
 export async function execute(interaction) {

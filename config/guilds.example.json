@@ -1,13 +1,13 @@
 {
   "defaults": { "operatorRoleIds": [], "feedChannelId": null, "servers": null },
   "guilds": {
-    "1408342037538799616": {
-      "feedChannelId": "1554590063541620897",
+    "123456789012345678": {
+      "feedChannelId": "234567890123456789",
       "operatorRoleIds": [],
       "servers": ["8"],
-      "feeds": { "8": "1554590063541620897" }
+      "feeds": { "8": "234567890123456789" }
     },
-    "1541489406920360017": {
+    "345678901234567890": {
       "operatorRoleIds": [],
       "servers": null
     }

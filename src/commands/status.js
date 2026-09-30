@@ -17,7 +17,7 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  examples: ['/status ludopatia', '/status 8'],
+  examples: ['/status mc-survival', '/status 8'],
   notes:
     'One server in detail: state, player count, who is online and whether RCON works for that game. For the whole list use `/servers`.',
 };

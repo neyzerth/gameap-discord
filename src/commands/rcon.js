@@ -20,9 +20,9 @@ export const autocomplete = autocompleteServers;
 export const help = {
   summary: 'operators only',
   examples: [
-    '/rcon ludopatia say Server restarts in 5 minutes',
-    '/rcon ludopatia list',
-    '/rcon ludopatia whitelist list',
+    '/rcon mc-survival say Server restarts in 5 minutes',
+    '/rcon mc-survival list',
+    '/rcon mc-survival whitelist list',
   ],
   notes:
     'Anything the server console accepts, with your own risk: it is not validated. Line breaks and ";" are rejected on purpose. Very long output is cut at 1800 characters.',
