@@ -2,7 +2,7 @@
 
 # Comandos
 
-Los 10 comandos se registran **globalmente** (una sola fuente, ver
+Los 11 comandos se registran **globalmente** (una sola fuente, ver
 [architecture.md](architecture.md#decisiones-de-diseño-y-sus-motivos)) y funcionan en cualquier
 guild donde esté el bot. Todos declaran `setContexts(Guild)`: no funcionan por DM.
 
@@ -30,6 +30,7 @@ flowchart LR
 | `/rcon <server> <command>` | server, command | operadores | pública | `POST /rcon` |
 | `/feed <server> <state>` | server, on\|off | operadores | pública | estado local (`data/feeds.json`) |
 | `/autostop <server> [hours] [warn]` | server, hours, warn | operadores | pública | estado local (`data/autostop.json`) + `POST /stop` cuando toca |
+| `/language [locale]` | locale | operadores | pública | estado local (`data/locale.json`) |
 | `/help [command]` | command | todos | pública | comandos cargados en memoria |
 
 `<server>` acepta el **id** del panel (`8`) o el **alias** de `config/servers.json`
@@ -77,8 +78,10 @@ Lista de jugadores por RCON. Responde con un mensaje claro en vez de un error cu
 3. `deferReply()` para no perder la interacción (límite de 3 s de Discord).
 4. **Atajo de estado ya alcanzado**: `/start` de algo que ya corre dice *"It was already running."*;
    `/stop` de algo apagado dice *"It was already stopped."* (no manda la orden al daemon).
-5. **Confirmación con botones** (solo `stop` y `restart`): si hay jugadores, embed naranja con la
-   lista y botones `Yes, stop` / `Cancel`, 60 s de espera, y **solo el autor** puede pulsarlos.
+5. **Confirmación con botones** (solo `stop` y `restart`): si hay jugadores, embed naranja que
+   muestra el conteo y la lista (p. ej. **`2` jugadores están en línea:**, en el idioma del
+   guild) con botones `Yes, stop` / `Cancel`, 60 s de espera, y **solo el autor** puede
+   pulsarlos.
    Si nadie confirma (o se agota el tiempo) → *Cancelled*.
 6. **Envío de la tarea** al panel y **seguimiento** cada 4 s hasta 120 s editando el embed con el
    tiempo transcurrido. El pie muestra `Daemon task #<id>` cuando el panel lo devuelve.
@@ -132,12 +135,51 @@ Apaga el servidor automáticamente si nadie juega durante X horas. Detalle compl
 - Es **por servidor**, no por Discord: el ajuste vale para todos los guilds que vean ese servidor.
 - Solo operadores.
 
+## `/language`
+
+Muestra o cambia el idioma que usa el bot **en este servidor de Discord** (por guild, no por
+usuario). Solo operadores (`guardOperator()`).
+
+- Sin `locale` → muestra el idioma efectivo actual.
+- `locale:en` / `locale:es-MX` → fija el override del guild.
+- `locale:auto` → borra el override y vuelve al idioma configurado.
+- El parámetro `locale` tiene **autocompletado** con los valores ofrecidos: `en`, `es-MX`, `auto`.
+- El override vive en `data/locale.json` (el mismo patrón que `/feed` y `/autostop`, así no se
+  toca `config/guilds.json`) y se aplica en memoria sin reiniciar.
+
+El idioma efectivo se resuelve **una vez por guild**: override de `/language` →
+`config/guilds.json` de ese guild → `config/guilds.json` (defaults) → `DEFAULT_LOCALE`
+(entorno) → inglés (idioma base del bot). Un valor sin catálogo se ignora, y una variante
+regional (`es-AR`, `es-419`) la sirve el catálogo de su idioma (`es-MX`).
+
+El embed de respuesta muestra:
+
+| Campo | Significado |
+|---|---|
+| `Idioma actual` | El idioma efectivo en este momento |
+| `Ajuste desde` | De dónde sale: `/language` (Discord) \| `config/guilds.json` (este guild) \| `config/guilds.json` (defaults) \| `DEFAULT_LOCALE` (entorno) \| idioma base del bot |
+| `Disponibles` | Las etiquetas de idioma que conoce el bot |
+
+Por ejemplo (en el idioma que está usando el guild):
+
+```
+Idioma actual: es-MX
+Ajuste desde:  /language (Discord)
+Disponibles:   en, es-MX
+Footer:        Usa `/language locale:es-MX` para cambiarlo, o `locale:auto` para volver al idioma configurado.
+```
+
+El idioma es **por guild**: cada servidor de Discord donde esté el bot puede tener el suyo, y
+todo lo que el bot escribe en Discord — embeds, avisos, ayuda, errores efímeros, botones —
+sigue ese idioma; los nombres de los comandos quedan en inglés. Detalles en [i18n.md](i18n.md).
+
 ## `/help [command]`
 
 - `/help` → guía general: los comandos por categoría, los servidores disponibles **en ese guild**
   y cómo funciona el feed.
 - `/help command:<nombre>` → ficha con **Usage** (autogenerado de las opciones), **Options**,
-  **Examples** y **Good to know**.
+  **Examples** y **Good to know** — los nombres de los campos siguen el idioma del guild (en
+  español: `Uso`, `Opciones`, `Ejemplos`, `Bueno saberlo`).
 - El parámetro `command` tiene **autocompletado** que filtra los nombres disponibles.
 
 La ayuda no está escrita a mano: `src/help.js` la construye desde los comandos cargados por

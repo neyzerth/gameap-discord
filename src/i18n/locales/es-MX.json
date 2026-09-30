@@ -1,0 +1,233 @@
+{
+  "actions": {
+    "start": "iniciar",
+    "stop": "detener",
+    "restart": "reiniciar"
+  },
+  "buttons": {
+    "cancel": "Cancelar",
+    "confirm": {
+      "start": "Sí, encender",
+      "stop": "Sí, apagar",
+      "restart": "Sí, reiniciar"
+    }
+  },
+  "embeds": {
+    "servers": {
+      "title": "Servidores de juego",
+      "empty": "No hay servidores disponibles.",
+      "line": "{emoji} **{label}** `#{id}` — {game} · {ip}:{port}"
+    },
+    "status": {
+      "state": "Estado",
+      "running": "🟢 encendido",
+      "stopped": "⚪ apagado",
+      "players": "Jugadores",
+      "autoStop": "Auto-apagado",
+      "onlineNow": "En línea ahora",
+      "noRcon": "RCON no está configurado en este servidor"
+    },
+    "control": {
+      "title": "{title} — {action}",
+      "starting": "Encendiendo…",
+      "stopping": "Apagando…",
+      "restarting": "Reiniciando…",
+      "online": "🟢 En línea",
+      "offline": "⚪ Apagado",
+      "error": "⚠️ Falló",
+      "cancelled": "Cancelado",
+      "task": "Tarea del daemon #{taskId}",
+      "note": "Nota",
+      "alreadyRunning": "Ya estaba encendido.",
+      "alreadyStopped": "Ya estaba apagado.",
+      "stillWorking": "Sigue en proceso — abre el panel de GameAP para ver la consola."
+    },
+    "confirm": {
+      "title": "{title} — ¿{action}?",
+      "players_one": "**{count}** jugador está en línea:",
+      "players_other": "**{count}** jugadores están en línea:",
+      "footer": "Esto les afecta. Confirma en 60 s."
+    },
+    "players": {
+      "title": "{title} — jugadores",
+      "none": "No hay jugadores en línea."
+    },
+    "autostop": {
+      "title": "{title} — auto-apagado",
+      "off": "desactivado",
+      "clockIdle": "⏳ {hours} h · {idle} inactivo",
+      "clockZero": "{hours} h · reloj de inactividad en 0",
+      "warning": "⏳ Sin jugadores desde hace **{idle}** — se apaga en **{minutes} min** si nadie entra.",
+      "warningFooter": "Auto-apagado tras {hours} h sin jugadores · /autostop {alias} hours:0 para desactivarlo",
+      "stopped": "😴 Apagado tras **{idle}** sin jugadores.",
+      "startAgainFooter": "Vuelve a encenderlo con /start {alias}",
+      "dryRunFooter": "DRY RUN — no se apagó nada",
+      "disabled": "**Desactivado.** Este servidor no se apagará solo.",
+      "enableField": "Actívalo",
+      "enableExample": "`/autostop {alias} hours:2`",
+      "summaryWarn": "Apaga el servidor tras **{hours} h** sin jugadores, con aviso **{warn} min** antes.",
+      "summaryNoWarn": "Apaga el servidor tras **{hours} h** sin jugadores, sin mensaje de aviso.",
+      "settingFrom": "Ajuste desde",
+      "settingOverride": "`/autostop` (Discord)",
+      "idleNow": "Inactivo ahora",
+      "stopsIn": "Se apaga en",
+      "notifiedIn": "Aviso en este Discord",
+      "noChannel": "no hay canal suscrito aquí — usa `/feed` para añadir uno",
+      "disableFooter": "Desactívalo con /autostop {alias} hours:0"
+    },
+    "language": {
+      "title": "Idioma",
+      "description": "Todo lo que el bot escribe en este Discord usa este idioma: embeds, avisos y la ayuda.",
+      "current": "Idioma actual",
+      "settingFrom": "Ajuste desde",
+      "available": "Disponibles",
+      "hint": "Usa `/language locale:es-MX` para cambiarlo, o `locale:auto` para volver al idioma configurado.",
+      "sources": {
+        "override": "`/language` (Discord)",
+        "guild": "`config/guilds.json` (este guild)",
+        "defaults": "`config/guilds.json` (defaults)",
+        "env": "`DEFAULT_LOCALE` (entorno)",
+        "base": "idioma base del bot"
+      }
+    },
+    "feed": {
+      "joined": "🟢 **entró:** {players}",
+      "left": "🔴 **salió:** {players}",
+      "onlineNow": "En línea ahora: {count}"
+    }
+  },
+  "errors": {
+    "commandFailed": "El comando falló: {message}",
+    "notAllowed": "No tienes permiso para usar este comando.",
+    "unknownServer": "Servidor desconocido: `{server}`",
+    "serverNotAvailable": "Ese servidor no está disponible en este Discord.",
+    "rconStopped": "RCON no disponible: el servidor está apagado.",
+    "rconUnsupported": "Este juego no permite listar jugadores por RCON.",
+    "rconError": "Error de RCON: {message}",
+    "rconRejected": "Comando rechazado: no se permiten saltos de línea ni \";\".",
+    "rconSent": "Comando RCON enviado (sin salida).",
+    "rconFailed": "RCON falló: {message}",
+    "unknownCommand": "No conozco ningún comando llamado `{command}`. Prueba con `/help`.",
+    "unknownLocale": "No conozco el idioma `{locale}`. Disponibles: {available}."
+  },
+  "feed": {
+    "enabled": "✅ Feed activado para <#{channel}>. El próximo ingreso o salida aparecerá aquí.",
+    "disabled": "🔕 Feed desactivado para este servidor aquí."
+  },
+  "commands": {
+    "servers": {
+      "description": "Lista todos los servidores de juego con su estado actual",
+      "notes": "🟢 encendido, ⚪ apagado, ❓ el panel no responde (registro del servidor deshabilitado o el daemon no reporta). Usa `/status <server>` para ver un servidor en detalle."
+    },
+    "status": {
+      "description": "Muestra un servidor en detalle: estado, jugadores, soporte de RCON",
+      "notes": "Un servidor en detalle: estado, cuántos jugadores hay, quiénes están en línea y si RCON funciona en ese juego. Para la lista completa usa `/servers`.",
+      "options": {
+        "server": "Id o alias del servidor"
+      }
+    },
+    "players": {
+      "description": "Lista los jugadores en línea ahora mismo (por RCON)",
+      "notes": "Si el servidor está apagado responde \"RCON no disponible: el servidor está apagado\" en vez de un error; igual si el juego no permite listar jugadores (como algunos con mods).",
+      "options": {
+        "server": "Id o alias del servidor"
+      }
+    },
+    "start": {
+      "description": "Enciende un servidor de juego",
+      "notes": "Muestra un embed de progreso hasta que el panel reporta el servidor encendido. Un servidor de Minecraft con muchos mods tarda 1-2 minutos en estar listo; si tarda más, el embed te dice que revises el panel.",
+      "options": {
+        "server": "Id o alias del servidor"
+      }
+    },
+    "stop": {
+      "description": "Apaga un servidor de juego (pide confirmación si hay jugadores)",
+      "notes": "Si alguien está jugando, el bot muestra los jugadores en línea y espera un botón de Confirmar/Cancelar (60 segundos) antes de apagar. Úsalo como guardia para \"guardar todo primero\", o `/rcon mc-survival say el servidor se reinicia en 1 min` antes.",
+      "options": {
+        "server": "Id o alias del servidor"
+      }
+    },
+    "restart": {
+      "description": "Reinicia un servidor de juego (pide confirmación si hay jugadores)",
+      "notes": "La misma confirmación que `/stop`. El embed sigue el proceso hasta que vuelve a estar en línea (un servidor de Minecraft con mods puede tardar 1-2 minutos).",
+      "options": {
+        "server": "Id o alias del servidor"
+      }
+    },
+    "rcon": {
+      "description": "Envía un comando RCON crudo a un servidor (por ejemplo, whitelist list, ...)",
+      "summary": "solo operadores",
+      "notes": "Todo lo que acepte la consola del servidor, bajo tu propio riesgo: no se valida. Los saltos de línea y \";\" se rechazan a propósito. La salida muy larga se corta a 1800 caracteres.",
+      "options": {
+        "server": "Id o alias del servidor",
+        "command": "Comando RCON, por ejemplo: say hola"
+      }
+    },
+    "feed": {
+      "description": "Suscribe o desuscribe este canal al feed de ingresos y salidas de un servidor",
+      "notes": "Aplica al canal donde lo ejecutas, no a todo el servidor. Las suscripciones nuevas empiezan en silencio: el siguiente mensaje llega con el próximo ingreso o salida real, no con los que ya están dentro.",
+      "options": {
+        "server": "Id o alias del servidor",
+        "state": "Activa el feed (en este canal) o desactívalo"
+      }
+    },
+    "autostop": {
+      "description": "Apaga un servidor automáticamente tras N horas sin jugadores",
+      "summary": "auto-apagado cuando nadie juega",
+      "notes": "El reloj solo cuenta mientras el servidor está encendido con 0 jugadores; si está apagado, o el panel no puede saberlo, el reloj se reinicia. Que alguien entre lo reinicia, y hay 10 minutos de gracia después de /start, /stop o /restart. Solo operadores.",
+      "options": {
+        "server": "Id o alias del servidor",
+        "hours": "Horas sin jugadores antes de apagarlo (0 = desactivarlo)",
+        "warn": "Minutos de aviso en el feed antes de apagarlo (0 = sin aviso)"
+      }
+    },
+    "help": {
+      "description": "Cómo usar el bot: todos los comandos, ejemplos y tips",
+      "notes": "La lista de comandos se genera con los comandos reales, así que siempre está al día.",
+      "options": {
+        "command": "Ver detalles y ejemplos de un comando en concreto"
+      }
+    },
+    "language": {
+      "description": "Muestra o cambia el idioma en el que escribe el bot en este Discord",
+      "summary": "idioma por guild",
+      "notes": "Cambia lo que escribe el bot (embeds, avisos, ayuda), no los comandos: `/start` sigue siendo `/start`. `locale:auto` quita tu elección y vuelve al idioma configurado. Solo operadores.",
+      "options": {
+        "locale": "Etiqueta de idioma, por ejemplo es-MX (o \"auto\" para volver)"
+      }
+    }
+  },
+  "help": {
+    "title": "Bot de GameAP — ayuda",
+    "intro": "Controlo los servidores de juego de tu panel GameAP y aviso quién entra y quién sale.",
+    "tip": "**Tip:** cada `<server>` acepta el alias (por ejemplo `mc-survival`) o el id numérico.",
+    "detailHint": "Escribe `/help command:start` (o cualquier otro comando) para ver detalles y ejemplos.",
+    "serversField": "Servidores disponibles aquí",
+    "notes": "Notas",
+    "usage": "Uso",
+    "options": "Opciones",
+    "required": "obligatorio",
+    "optional": "opcional",
+    "examples": "Ejemplos",
+    "goodToKnow": "Bueno saberlo",
+    "footer": "Escribe /help para ver la lista completa",
+    "categories": {
+      "control": {
+        "title": "🎛️ Control",
+        "blurb": "Encender y apagar servidores"
+      },
+      "information": {
+        "title": "📊 Información",
+        "blurb": "Qué está encendido y quién está en línea"
+      },
+      "utility": {
+        "title": "🛠️ Utilidad",
+        "blurb": "Consola, avisos y automatización"
+      }
+    },
+    "feed": {
+      "title": "📣 Feed de entradas y salidas",
+      "body": "El bot revisa la lista de jugadores cada ~20 s y publica \"entró\"/\"salió\" en el canal del feed.\n`/feed <server> off` lo silencia **en el canal donde ejecutas el comando**; `/feed <server> on` lo reactiva.\nSi un servidor está apagado no se anuncia nada (sin falsos \"todos salieron\")."
+    }
+  }
+}

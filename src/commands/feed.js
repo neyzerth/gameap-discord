@@ -1,29 +1,38 @@
 import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { loadFeeds, saveFeeds } from '../state.js';
-import { setOverrides } from '../config.js';
+import { localeFor, setOverrides } from '../config.js';
 import { autocompleteServers, guardOperator, resolveServerOption } from '../control.js';
+import { t } from '../i18n/index.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('feed')
-  .setDescription('Subscribe or unsubscribe this channel to a server join/leave feed')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  )
-  .addStringOption((option) =>
-    option
-      .setName('state')
-      .setDescription('Turn the feed on (this channel) or off')
-      .setRequired(true)
-      .addChoices({ name: 'on', value: 'on' }, { name: 'off', value: 'off' }),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('feed')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'feed',
+        'server',
+      ),
+    )
+    .addStringOption((option) =>
+      localizeOption(
+        option
+          .setName('state')
+          .setRequired(true)
+          .addChoices({ name: 'on', value: 'on' }, { name: 'off', value: 'off' }),
+        'feed',
+        'state',
+      ),
+    ),
+  'feed',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
   examples: ['/feed mc-survival on', '/feed mc-survival off'],
-  notes:
-    'It applies to the channel where you run it, not to the whole server. New subscriptions start silent: the next message comes with the next real join or leave, not with the people already inside.',
 };
 
 export async function execute(interaction) {
@@ -31,6 +40,7 @@ export async function execute(interaction) {
   const serverId = await resolveServerOption(interaction);
   if (!serverId) return;
 
+  const locale = localeFor(interaction.guildId);
   const state = interaction.options.getString('state');
   const key = `${interaction.guildId}:${serverId}`;
   const feeds = loadFeeds();
@@ -42,7 +52,7 @@ export async function execute(interaction) {
 
   await interaction.reply(
     state === 'on'
-      ? `✅ Feed for <#${interaction.channelId}> enabled. The next join/leave will show up here.`
-      : '🔕 Feed disabled for this server here.',
+      ? t(locale, 'feed.enabled', { channel: interaction.channelId })
+      : t(locale, 'feed.disabled'),
   );
 }

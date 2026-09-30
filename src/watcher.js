@@ -1,8 +1,8 @@
 import { rconFeatures, playerNames, serverStatus, stopServer } from './gameap.js';
 import {
-  pollTargets, feedTarget, autoStopConfig, setOverrides, setAutoStopOverrides,
+  pollTargets, feedTarget, autoStopConfig, setOverrides, setAutoStopOverrides, setLocaleOverrides,
 } from './config.js';
-import { getState, save, diff, loadFeeds, loadAutoStop } from './state.js';
+import { getState, save, diff, loadFeeds, loadAutoStop, loadLocales } from './state.js';
 import { announcePlayers, fanOut, autostopWarningEmbed, autoStopEmbed } from './embeds.js';
 import { accumulateIdle, evaluateIdle, formatDuration, newIdle } from './autostop.js';
 import { log } from './logger.js';
@@ -27,6 +27,7 @@ export function startWatcher(client) {
   const state = getState();
   setOverrides(loadFeeds());
   setAutoStopOverrides(loadAutoStop());
+  setLocaleOverrides(loadLocales());
   let busy = false;
   const lastPollAt = new Map(); // serverId -> ms del último intento (delta del reloj de inactividad)
 
@@ -102,10 +103,9 @@ export function startWatcher(client) {
 
         if (verdict.action === 'warn') {
           const minutesLeft = Math.max(1, Math.round(verdict.remainingMs / 60000));
-          const sent = await fanOut(
-            client,
-            serverId,
-            autostopWarningEmbed(serverId, verdict.idleMs, minutesLeft, cfg),
+          // El embed se construye por guild: cada Discord lo recibe en su idioma.
+          const sent = await fanOut(client, serverId, (locale) =>
+            autostopWarningEmbed(locale, serverId, verdict.idleMs, minutesLeft, cfg),
           );
           st.idle.warnedAt = now;
           log.info(
@@ -115,12 +115,14 @@ export function startWatcher(client) {
           const idleText = formatDuration(verdict.idleMs);
           if (AUTOSTOP_DRY_RUN) {
             log.warn(`[dry-run] would stop server ${serverId} (idle ${idleText})`);
-            await fanOut(client, serverId, autoStopEmbed(serverId, verdict.idleMs, { dryRun: true }));
+            await fanOut(client, serverId, (locale) =>
+              autoStopEmbed(locale, serverId, verdict.idleMs, { dryRun: true }),
+            );
           } else {
             try {
               const started = await stopServer(serverId);
               log.info(`auto-stopped server ${serverId} after ${idleText} idle (task ${started?.task_id})`);
-              await fanOut(client, serverId, autoStopEmbed(serverId, verdict.idleMs));
+              await fanOut(client, serverId, (locale) => autoStopEmbed(locale, serverId, verdict.idleMs));
             } catch (err) {
               log.warn(`auto-stop of server ${serverId} failed: ${err.status ?? ''} ${err.message}`.trim());
             }

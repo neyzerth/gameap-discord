@@ -1,20 +1,25 @@
 import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { autocompleteServers, runControl } from '../control.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('restart')
-  .setDescription('Restart a game server (asks for confirmation when players are online)')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('restart')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'restart',
+        'server',
+      ),
+    ),
+  'restart',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
   examples: ['/restart mc-survival', '/restart 8'],
-  notes:
-    'Same confirmation as `/stop`. The embed follows the process until it comes back up (a modded Minecraft server can take 1-2 minutes).',
 };
 
 export async function execute(interaction) {

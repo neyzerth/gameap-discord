@@ -9,9 +9,10 @@ un jugador.
 ![Licencia: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node >= 22](https://img.shields.io/badge/node-%3E%3D22-339933.svg?logo=node.js&logoColor=white)
 ![discord.js v14](https://img.shields.io/badge/discord.js-v14-5865F2.svg?logo=discord&logoColor=white)
+[![docker](https://github.com/neyzerth/gameap-discord/actions/workflows/docker.yml/badge.svg)](https://github.com/neyzerth/gameap-discord/actions/workflows/docker.yml)
 
 - **Comandos slash** — `/servers`, `/status`, `/start`, `/stop`, `/restart`, `/players`, `/rcon`,
-  `/feed`, `/autostop`, `/help`.
+  `/feed`, `/autostop`, `/help`, `/language`.
 - **RCON a través del panel** — el bot solo habla la API HTTP del panel, así que nunca abre un puerto
   de juego y el firewall puede seguir cerrado.
 - **Feed de jugadores** — un sondeo anuncia entradas y salidas en el canal que elijas, con reglas que
@@ -70,10 +71,19 @@ Discord los muestre duplicados en algunos clientes. En git solo están las plant
 | `/feed <server> on\|off` | Suscribe este canal a los avisos de entradas/salidas |
 | `/autostop <server> [hours] [warn]` | Apaga el servidor solo si nadie juega N horas (por defecto 2 h; `hours:0` lo desactiva) |
 | `/help [command]` | Guía general, o detalle y ejemplos de un comando |
+| `/language [locale]` | Muestra el idioma de este guild o cámbialo (`en`, `es-MX`; `auto` vuelve a la config) |
 
 `<server>` acepta el id del panel o el alias de `config/servers.json` (ej. `/start mc-survival`).
 `/help` se genera desde los comandos que el bot cargó de verdad, y un test falla si un comando nuevo
 llega sin texto de ayuda.
+
+## Idiomas
+
+El bot trae **inglés** como idioma base y **español mexicano** (`es-MX`). El idioma es **por
+guild**: `/language` guarda un override en `data/locale.json`, con fallback a la entrada del guild
+en `guilds.json`, los `defaults`, `DEFAULT_LOCALE` y finalmente inglés; `/language locale:auto`
+borra el override. Agregar un idioma es un catálogo JSON más un deploy — ver
+[docs/es/i18n.md](docs/es/i18n.md).
 
 ## Documentación
 
@@ -83,13 +93,14 @@ en [`docs/es/`](docs/es/README.md) (este idioma).
 | Documento | Léelo si quieres saber… |
 |---|---|
 | [architecture.md](docs/es/architecture.md) | Cómo se conectan las piezas y por qué cada decisión de diseño |
-| [commands.md](docs/es/commands.md) | Los 10 comandos y sus errores |
+| [commands.md](docs/es/commands.md) | Los 11 comandos y sus errores |
 | [configuration.md](docs/es/configuration.md) | `.env`, los JSON y la precedencia del feed |
 | [feed.md](docs/es/feed.md) | El watcher y sus reglas anti-spam |
 | [autostop.md](docs/es/autostop.md) | Auto-apagado por inactividad (`/autostop`) y modo dry-run |
 | [gameap-api.md](docs/es/gameap-api.md) | Endpoints del panel y abilities del PAT |
 | [operations.md](docs/es/operations.md) | Desplegar, rotar credenciales, troubleshooting |
 | [development.md](docs/es/development.md) | Mapa del código, tests, cómo añadir un comando |
+| [i18n.md](docs/es/i18n.md) | Catálogos de idiomas, resolución del idioma por guild, cómo agregar uno |
 
 ```bash
 npm test            # tests unitarios

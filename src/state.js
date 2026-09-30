@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 const STATE_FILE = () => process.env.STATE_FILE ?? './data/state.json';
 const FEEDS_FILE = () => process.env.FEEDS_STATE_FILE ?? './data/feeds.json';
 const AUTO_STOP_FILE = () => process.env.AUTOSTOP_FILE ?? './data/autostop.json';
+const LOCALES_FILE = () => process.env.LOCALES_STATE_FILE ?? './data/locale.json';
 
 function readJson(file, fallback) {
   try {
@@ -46,6 +47,15 @@ export function loadAutoStop() {
 
 export function saveAutoStop(overrides) {
   writeJson(AUTO_STOP_FILE(), overrides);
+}
+
+// Idioma elegido con /language: clave = id del guild, valor = tag ('es-MX').
+export function loadLocales() {
+  return readJson(LOCALES_FILE(), {});
+}
+
+export function saveLocales(locales) {
+  writeJson(LOCALES_FILE(), locales);
 }
 
 // Estado compartido: el watcher y los comandos deben ver el MISMO objeto, porque el

@@ -1,73 +1,77 @@
 // Help text, built from the live command modules so it never goes stale.
-// Every command module may export `help = { examples: [], notes: '' }`.
+// Every command module may export `help = { examples: [] }`; the prose lives in
+// the catalogs (commands.<name>.*), so the same command reads in both languages.
 
 import { EmbedBuilder } from 'discord.js';
 import { canUseServer, knownServerIds, serverMeta } from './config.js';
 import { usageOf } from './registry.js';
+import { has, t } from './i18n/index.js';
 
 const COLOR = 0x5865f2;
 
+// Las categorías son solo agrupación; los nombres están en el catálogo.
 export const CATEGORIES = [
-  { title: '🎛️ Control', blurb: 'Turn servers on and off', names: ['start', 'stop', 'restart'] },
-  { title: '📊 Information', blurb: 'What is running and who is online', names: ['servers', 'status', 'players'] },
-  { title: '🛠️ Utility', blurb: 'Console access, notifications and automation', names: ['rcon', 'feed', 'autostop', 'help'] },
+  { id: 'control', names: ['start', 'stop', 'restart'] },
+  { id: 'information', names: ['servers', 'status', 'players'] },
+  { id: 'utility', names: ['rcon', 'feed', 'autostop', 'language', 'help'] },
 ];
 
-function serversField(guildId) {
+// Texto opcional de un comando (solo algunos lo tienen, p. ej. la nota de /rcon).
+const optional = (locale, name, field) => {
+  const key = `commands.${name}.${field}`;
+  return has(locale, key) ? t(locale, key) : null;
+};
+
+function serversField(locale, guildId) {
   const ids = knownServerIds().filter((id) => canUseServer(guildId, id));
   if (!ids.length) return null;
   const lines = ids.map((id) => {
     const meta = serverMeta(id);
     return `${meta.emoji ?? '🎮'} \`${meta.alias ?? id}\` — ${meta.label ?? id} (#${id})`;
   });
-  return { name: 'Servers available here', value: lines.join('\n').slice(0, 1024) };
+  return { name: t(locale, 'help.serversField'), value: lines.join('\n').slice(0, 1024) };
 }
 
-export function generalEmbed(commands, guildId) {
+export function generalEmbed(commands, guildId, locale) {
   const fields = CATEGORIES.map((category) => {
     const lines = category.names
       .filter((name) => commands.has(name))
       .map((name) => {
-        const json = commands.get(name).data.toJSON();
-        const extra = commands.get(name).help?.summary;
-        return `**${usageOf(commands.get(name))}** — ${json.description}${extra ? `\n-# ${extra}` : ''}`;
+        const description = t(locale, `commands.${name}.description`);
+        const extra = optional(locale, name, 'summary');
+        return `**${usageOf(commands.get(name))}** — ${description}${extra ? `\n-# ${extra}` : ''}`;
       });
-    return { name: `${category.title} · ${category.blurb}`, value: lines.join('\n').slice(0, 1024) };
+    return {
+      name: `${t(locale, `help.categories.${category.id}.title`)} · ${t(locale, `help.categories.${category.id}.blurb`)}`,
+      value: lines.join('\n').slice(0, 1024),
+    };
   }).filter((f) => f.value);
-
-  const extra = [].filter(Boolean);
 
   const embed = new EmbedBuilder()
     .setColor(COLOR)
-    .setTitle('GameAP bot — help')
+    .setTitle(t(locale, 'help.title'))
     .setDescription(
       [
-        'I control the game servers of your GameAP panel and post who joins and leaves.',
-        '**Tip:** every `<server>` accepts the alias (e.g. `mc-survival`) or the numeric id.',
-        'Type `/help command:start` (or any other command) for details and examples.',
+        t(locale, 'help.intro'),
+        t(locale, 'help.tip'),
+        t(locale, 'help.detailHint'),
       ].join('\n'),
     )
     .addFields(...fields)
     .setTimestamp();
 
-  const servers = serversField(guildId);
+  const servers = serversField(locale, guildId);
   if (servers) embed.addFields(servers);
 
   embed.addFields({
-    name: '📣 Join/leave feed',
-    value: [
-      'A watcher checks the player list every ~20 s and posts "joined"/"left" in the feed channel.',
-      '`/feed <server> off` silences it **in the channel where you run the command**; `/feed <server> on` brings it back.',
-      'If a server is stopped, nothing is announced (no fake "everyone left" bursts).',
-    ].join('\n'),
+    name: t(locale, 'help.feed.title'),
+    value: t(locale, 'help.feed.body'),
   });
-
-  if (extra.length) embed.addFields({ name: 'Notes', value: extra.join('\n') });
 
   return embed;
 }
 
-export function commandEmbed(commands, name) {
+export function commandEmbed(commands, name, locale) {
   const mod = commands.get(name);
   if (!mod) return null;
 
@@ -75,18 +79,18 @@ export function commandEmbed(commands, name) {
   const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setTitle(`/${json.name}`)
-    .setDescription(json.description)
-    .addFields({ name: 'Usage', value: `\`${usageOf(mod)}\`` });
+    .setDescription(t(locale, `commands.${name}.description`))
+    .addFields({ name: t(locale, 'help.usage'), value: `\`${usageOf(mod)}\`` });
 
   const options = json.options ?? [];
   if (options.length) {
     embed.addFields({
-      name: 'Options',
+      name: t(locale, 'help.options'),
       value: options
         .map((o) => {
           const choices = o.choices?.length ? ` (${o.choices.map((c) => `\`${c.value}\``).join(', ')})` : '';
-          const req = o.required ? 'required' : 'optional';
-          return `\`${o.name}\`${choices} — ${o.description} *(${req})*`;
+          const req = t(locale, o.required ? 'help.required' : 'help.optional');
+          return `\`${o.name}\`${choices} — ${t(locale, `commands.${name}.options.${o.name}`)} *(${req})*`;
         })
         .join('\n')
         .slice(0, 1024),
@@ -94,12 +98,14 @@ export function commandEmbed(commands, name) {
   }
 
   if (mod.help?.examples?.length) {
-    embed.addFields({ name: 'Examples', value: mod.help.examples.map((e) => `\`${e}\``).join('\n').slice(0, 1024) });
+    embed.addFields({
+      name: t(locale, 'help.examples'),
+      value: mod.help.examples.map((e) => `\`${e}\``).join('\n').slice(0, 1024),
+    });
   }
-  if (mod.help?.notes) {
-    embed.addFields({ name: 'Good to know', value: String(mod.help.notes).slice(0, 1024) });
-  }
+  const notes = optional(locale, name, 'notes');
+  if (notes) embed.addFields({ name: t(locale, 'help.goodToKnow'), value: String(notes).slice(0, 1024) });
 
-  embed.setFooter({ text: 'Type /help for the full list' }).setTimestamp();
+  embed.setFooter({ text: t(locale, 'help.footer') }).setTimestamp();
   return embed;
 }

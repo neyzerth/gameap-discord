@@ -1,11 +1,13 @@
+import './test-config.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const {
   __setConfig, guildConfig, resolveServer, canUseServer, feedTarget, isAnnounceOn, pollTargets, setOverrides,
-  setAutoStopOverrides, autoStopConfig,
+  setAutoStopOverrides, autoStopConfig, localeFor, localeSource, setLocaleOverrides,
 } = await import('./config.js');
 const { isOperator } = await import('./permissions.js');
+const { t } = await import('./i18n/index.js');
 
 const SERVERS = {
   8: { alias: 'mc-survival', label: 'MC Survival', announce: true },
@@ -13,9 +15,9 @@ const SERVERS = {
 };
 
 const GUILDS = {
-  defaults: { operatorRoleIds: [], feedChannelId: null, servers: null },
+  defaults: { operatorRoleIds: [], feedChannelId: null, servers: null, locale: 'en' },
   guilds: {
-    g1: { feedChannelId: 'chan-default', feeds: { 8: 'chan-eight' }, servers: ['8'] },
+    g1: { feedChannelId: 'chan-default', feeds: { 8: 'chan-eight' }, servers: ['8'], locale: 'es-MX' },
     g2: { operatorRoleIds: ['role-op'] },
   },
 };
@@ -119,5 +121,54 @@ test('with operatorRoleIds set, the role is required', () => {
   __setConfig(SERVERS, { defaults: {}, guilds: { g1: { operatorRoleIds: ['role-op'] } } });
   assert.equal(isOperator(fakeMember([])), false);
   assert.equal(isOperator(fakeMember(['role-op'])), true);
+  __setConfig(SERVERS, GUILDS);
+});
+
+test('locale resolution: /language override > guild > defaults > base', () => {
+  setLocaleOverrides({});
+  assert.equal(localeFor('g1'), 'es-MX'); // the guild sets its own language
+  assert.equal(localeSource('g1'), 'guild');
+  assert.equal(localeFor('g2'), 'en'); // no guild value: falls back to defaults
+  assert.equal(localeSource('g2'), 'defaults');
+
+  setLocaleOverrides({ g1: 'en' }); // what /language would write
+  assert.equal(localeFor('g1'), 'en');
+  assert.equal(localeSource('g1'), 'override');
+  setLocaleOverrides({});
+});
+
+test('an unsupported locale is skipped, never half-served', () => {
+  setLocaleOverrides({ g1: 'de', g2: 'klingon' });
+  assert.equal(localeFor('g1'), 'es-MX', 'the override is ignored, the guild value applies');
+
+  __setConfig(SERVERS, { defaults: {}, guilds: { g2: {} } });
+  assert.equal(localeFor('g2'), 'en', 'no locale anywhere: base language');
+  assert.equal(localeSource('g2'), 'base');
+
+  __setConfig(SERVERS, GUILDS);
+  setLocaleOverrides({});
+});
+
+test('locale tags are tolerated in any case or separator, region variants resolve', () => {
+  setLocaleOverrides({ g1: 'es_mx' });
+  assert.equal(localeFor('g1'), 'es-MX');
+
+  setLocaleOverrides({ g1: 'es-AR' });
+  assert.equal(localeFor('g1'), 'es-AR', 'the tag the user asked for is kept');
+  assert.equal(t(localeFor('g1'), 'errors.commandFailed', { message: 'boom' }), 'El comando falló: boom');
+
+  setLocaleOverrides({});
+});
+
+test('DEFAULT_LOCALE is the last resort before the base language', () => {
+  const before = process.env.DEFAULT_LOCALE;
+  process.env.DEFAULT_LOCALE = 'es-MX';
+  __setConfig(SERVERS, { defaults: {}, guilds: { g2: {} } });
+
+  assert.equal(localeFor('g2'), 'es-MX');
+  assert.equal(localeSource('g2'), 'env');
+
+  if (before === undefined) delete process.env.DEFAULT_LOCALE;
+  else process.env.DEFAULT_LOCALE = before;
   __setConfig(SERVERS, GUILDS);
 });

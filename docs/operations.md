@@ -22,10 +22,10 @@ cp .env.example .env && chmod 600 .env     # and fill in DISCORD_TOKEN + GAMEAP_
 cp config/servers.example.json config/servers.json    # and edit the real alias/label/ids
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 19 tests, must pass before deploying
+npm test                                   # 77 tests, must pass before deploying
 npm run deploy                             # registers the GLOBAL commands
 docker compose up -d --build
-docker logs -f gameap-bot                  # "loaded 9 commands" + "logged in as ... — N guild(s)"
+docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
 
 Details in the `compose.yaml` that are not cosmetic:
@@ -49,6 +49,41 @@ If you touched `src/commands/` (name, description, or options), **also**:
 ```bash
 npm run deploy
 ```
+
+## Using the published image
+
+The `docker` workflow (`.github/workflows/docker.yml`) runs the whole suite and publishes the
+image to the GitHub Container Registry:
+
+| Where the build comes from | Tags published |
+|---|---|
+| push to `main` | `latest`, `sha-<short>` |
+| tag `v1.2.3` | `1.2.3`, `1.2`, `latest`, `sha-<short>` |
+| pull request | nothing: it only compiles, to validate the Dockerfile |
+| manual ("Run workflow") | the same tags as the ref it runs on |
+
+To run from the registry instead of building on the host, swap the `build:` block for the image;
+everything else in the service stays the same (`env_file`, the `./data` and `./config` mounts,
+`network_mode: host`):
+
+```yaml
+services:
+  gameap-bot:
+    image: ghcr.io/neyzerth/gameap-discord:latest
+    # build:              # you can keep both: --build then builds locally
+    #   context: .
+    #   network: host
+```
+
+Then `docker compose pull && docker compose up -d`. Pin a version (`:1.2.3`) if you would rather
+not follow `latest`.
+
+The image ships **only** `config/*.example.json`: `.dockerignore` keeps `.env`,
+`config/servers.json` and `config/guilds.json` out of the build context, so an image pulled by
+anyone carries no ids and no tokens. That is also why a container started from the image needs
+your config mounted (or `SERVERS_FILE`/`GUILDS_FILE` pointing at it) and `.env` passed with
+`env_file`. The package starts private: adjust its visibility in the package settings on GitHub
+if you want it public — and if it stays private, `docker login ghcr.io` on the host first.
 
 ## Command registration: a single source
 
@@ -189,20 +224,22 @@ The uuids: `ls /etc/systemd/system | grep 'gameap-server-.*\\.socket$'`.
 
 ## Backups
 
-What's worth backing up: `config/` (catalog and guilds) and, optionally, `data/` (feed state).
-`.env` goes separately, encrypted, because it holds the secrets.
+What's worth backing up: `config/` (catalog and guilds) and, optionally, `data/` (feed state and
+`/language` overrides). `.env` goes separately, encrypted, because it holds the secrets.
 
 ```bash
 tar czf /var/backups/gameap-bot-config-$(date +%F).tar.gz -C /opt/gameap-discord-bot config .env
 ```
 
-`data/state.json` and `data/feeds.json` are disposable: they get recreated and only trigger a
-quiet baseline.
+`data/state.json`, `data/feeds.json` and `data/locale.json` are disposable: they get recreated,
+and deleting them only costs a quiet baseline (state) or the runtime overrides (`/feed`,
+`/language`). `data/locale.json` in particular is safe to delete: every guild falls back to its
+configured locale (`guilds.json` → `DEFAULT_LOCALE` → `en`).
 
 ## Checklist after any change
 
-- [ ] `npm test` green (19 tests)
-- [ ] `docker logs --tail 10` without `ERROR`, with `loaded 9 commands` and `— N guild(s)`
+- [ ] `npm test` green (77 tests)
+- [ ] `docker logs --tail 10` without `ERROR`, with `loaded 11 commands` and `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` at 0
 - [ ] A real command tested (`/servers` and `/players <server>`)
 - [ ] If you touched the feed: inject a fake player and see the notice in the right channel

@@ -1,31 +1,37 @@
 import { SlashCommandBuilder, InteractionContextType, MessageFlags } from 'discord.js';
 import { rconCommand } from '../gameap.js';
 import { autocompleteServers, guardOperator, resolveServerOption } from '../control.js';
+import { localeFor } from '../config.js';
+import { t } from '../i18n/index.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
 const MAX_LEN = 1800;
 
-export const data = new SlashCommandBuilder()
-  .setName('rcon')
-  .setDescription('Send a raw RCON command to a server (say, whitelist list, ...)')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  )
-  .addStringOption((option) =>
-    option.setName('command').setDescription('RCON command, e.g. say hello').setRequired(true),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('rcon')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'rcon',
+        'server',
+      ),
+    )
+    .addStringOption((option) =>
+      localizeOption(option.setName('command').setRequired(true), 'rcon', 'command'),
+    ),
+  'rcon',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  summary: 'operators only',
   examples: [
     '/rcon mc-survival say Server restarts in 5 minutes',
     '/rcon mc-survival list',
     '/rcon mc-survival whitelist list',
   ],
-  notes:
-    'Anything the server console accepts, with your own risk: it is not validated. Line breaks and ";" are rejected on purpose. Very long output is cut at 1800 characters.',
 };
 
 export async function execute(interaction) {
@@ -33,10 +39,11 @@ export async function execute(interaction) {
   const serverId = await resolveServerOption(interaction);
   if (!serverId) return;
 
+  const locale = localeFor(interaction.guildId);
   const command = interaction.options.getString('command').trim();
   if (!command || /[\n\r;]/.test(command)) {
     await interaction.reply({
-      content: 'Command rejected: line breaks and ";" are not allowed.',
+      content: t(locale, 'errors.rconRejected'),
       flags: MessageFlags.Ephemeral,
     });
     return;
@@ -47,12 +54,10 @@ export async function execute(interaction) {
   try {
     const { output } = await rconCommand(serverId, command);
     const text = String(output ?? '').trim();
-    await interaction.editReply(
-      text
-        ? `\`\`\`\n${text.slice(0, MAX_LEN)}\n\`\`\``
-        : 'RCON command sent (no output).',
-    );
+    await interaction.editReply(text ? `\`\`\`\n${text.slice(0, MAX_LEN)}\n\`\`\`` : t(locale, 'errors.rconSent'));
   } catch (err) {
-    await interaction.editReply(`RCON failed: ${err.status ?? ''} ${err.message}`.trim());
+    await interaction.editReply(
+      t(locale, 'errors.rconFailed', { message: `${err.status ?? ''} ${err.message}`.trim() }),
+    );
   }
 }

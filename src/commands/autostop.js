@@ -1,51 +1,47 @@
 import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { autocompleteServers, guardOperator, resolveServerOption } from '../control.js';
-import { autoStopConfig, setAutoStopOverrides } from '../config.js';
+import { autoStopConfig, localeFor, setAutoStopOverrides } from '../config.js';
 import { getState, loadAutoStop, saveAutoStop } from '../state.js';
 import { evaluateIdle } from '../autostop.js';
 import { autostopStatusEmbed } from '../embeds.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('autostop')
-  .setDescription('Stop a server automatically after N hours without players')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  )
-  .addIntegerOption((option) =>
-    option
-      .setName('hours')
-      .setDescription('Hours without players before stopping (0 = turn it off)')
-      .setMinValue(0)
-      .setMaxValue(168),
-  )
-  .addIntegerOption((option) =>
-    option
-      .setName('warn')
-      .setDescription('Minutes of warning in the feed before stopping (0 = no warning)')
-      .setMinValue(0)
-      .setMaxValue(120),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('autostop')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(
+        option.setName('server').setRequired(true).setAutocomplete(true),
+        'autostop',
+        'server',
+      ),
+    )
+    .addIntegerOption((option) =>
+      localizeOption(option.setName('hours').setMinValue(0).setMaxValue(168), 'autostop', 'hours'),
+    )
+    .addIntegerOption((option) =>
+      localizeOption(option.setName('warn').setMinValue(0).setMaxValue(120), 'autostop', 'warn'),
+    ),
+  'autostop',
+);
 
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  summary: 'auto-shutdown when nobody plays',
   examples: [
     '/autostop mc-survival',
     '/autostop mc-survival hours:2 warn:15',
     '/autostop mc-survival hours:2 warn:0',
     '/autostop mc-survival hours:0',
   ],
-  notes:
-    'The clock only counts while the server is up with 0 players; if it is off, or the panel cannot tell, the clock resets. Anyone joining resets it, and 10 minutes of grace apply after /start, /stop or /restart. Operators only.',
 };
 
-function statusView(serverId, guildId) {
+function statusView(serverId, guildId, locale) {
   const cfg = autoStopConfig(serverId);
   const idle = getState().servers[String(serverId)]?.idle;
   const verdict = evaluateIdle(idle, cfg, { nowMs: Date.now() });
-  return autostopStatusEmbed(serverId, cfg, {
+  return autostopStatusEmbed(locale, serverId, cfg, {
     idleMs: verdict.idleMs,
     minutesLeft: Number.isFinite(verdict.remainingMs) ? verdict.remainingMs : null,
     guildId,
@@ -57,11 +53,12 @@ export async function execute(interaction) {
   const serverId = await resolveServerOption(interaction);
   if (!serverId) return;
 
+  const locale = localeFor(interaction.guildId);
   const hours = interaction.options.getInteger('hours');
   const warn = interaction.options.getInteger('warn');
 
   if (hours === null && warn === null) {
-    await interaction.reply({ embeds: [statusView(serverId, interaction.guildId)] });
+    await interaction.reply({ embeds: [statusView(serverId, interaction.guildId, locale)] });
     return;
   }
 
@@ -79,5 +76,5 @@ export async function execute(interaction) {
   saveAutoStop(overrides);
   setAutoStopOverrides(overrides);
 
-  await interaction.reply({ embeds: [statusView(serverId, interaction.guildId)] });
+  await interaction.reply({ embeds: [statusView(serverId, interaction.guildId, locale)] });
 }

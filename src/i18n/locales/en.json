@@ -1,0 +1,233 @@
+{
+  "actions": {
+    "start": "start",
+    "stop": "stop",
+    "restart": "restart"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "confirm": {
+      "start": "Yes, start",
+      "stop": "Yes, stop",
+      "restart": "Yes, restart"
+    }
+  },
+  "embeds": {
+    "servers": {
+      "title": "Game servers",
+      "empty": "No servers available.",
+      "line": "{emoji} **{label}** `#{id}` — {game} · {ip}:{port}"
+    },
+    "status": {
+      "state": "State",
+      "running": "🟢 running",
+      "stopped": "⚪ stopped",
+      "players": "Players",
+      "autoStop": "Auto-stop",
+      "onlineNow": "Online now",
+      "noRcon": "RCON is not configured for this server"
+    },
+    "control": {
+      "title": "{title} — {action}",
+      "starting": "Starting…",
+      "stopping": "Stopping…",
+      "restarting": "Restarting…",
+      "online": "🟢 Online",
+      "offline": "⚪ Stopped",
+      "error": "⚠️ Failed",
+      "cancelled": "Cancelled",
+      "task": "Daemon task #{taskId}",
+      "note": "Note",
+      "alreadyRunning": "It was already running.",
+      "alreadyStopped": "It was already stopped.",
+      "stillWorking": "Still working — open the GameAP panel to watch the console."
+    },
+    "confirm": {
+      "title": "{title} — confirm {action}",
+      "players_one": "**{count}** player is online:",
+      "players_other": "**{count}** players are online:",
+      "footer": "This will affect them. Confirm within 60s."
+    },
+    "players": {
+      "title": "{title} — players",
+      "none": "No players online."
+    },
+    "autostop": {
+      "title": "{title} — auto-stop",
+      "off": "off",
+      "clockIdle": "⏳ {hours}h · {idle} idle",
+      "clockZero": "{hours}h · idle clock at 0",
+      "warning": "⏳ No players for **{idle}** — stopping in **{minutes}m** unless someone joins.",
+      "warningFooter": "Auto-stop after {hours}h idle · /autostop {alias} hours:0 to disable",
+      "stopped": "😴 Stopped after **{idle}** with no players.",
+      "startAgainFooter": "Start it again with /start {alias}",
+      "dryRunFooter": "DRY RUN — nothing was stopped",
+      "disabled": "**Disabled.** This server will not stop by itself.",
+      "enableField": "Enable it",
+      "enableExample": "`/autostop {alias} hours:2`",
+      "summaryWarn": "Stops the server after **{hours}h** with no players, with a warning **{warn}m** before.",
+      "summaryNoWarn": "Stops the server after **{hours}h** with no players, with no warning message.",
+      "settingFrom": "Setting from",
+      "settingOverride": "`/autostop` (Discord)",
+      "idleNow": "Idle now",
+      "stopsIn": "Stops in",
+      "notifiedIn": "Notified in this Discord",
+      "noChannel": "no channel subscribed here — use `/feed` to add one",
+      "disableFooter": "Disable with /autostop {alias} hours:0"
+    },
+    "language": {
+      "title": "Language",
+      "description": "Everything the bot writes in this Discord uses this language: embeds, warnings and the help.",
+      "current": "Current",
+      "settingFrom": "Setting from",
+      "available": "Available",
+      "hint": "Use `/language locale:es-MX` to change it, or `locale:auto` to go back to the configured language.",
+      "sources": {
+        "override": "`/language` (Discord)",
+        "guild": "`config/guilds.json` (this guild)",
+        "defaults": "`config/guilds.json` (defaults)",
+        "env": "`DEFAULT_LOCALE` (environment)",
+        "base": "bot base language"
+      }
+    },
+    "feed": {
+      "joined": "🟢 **joined:** {players}",
+      "left": "🔴 **left:** {players}",
+      "onlineNow": "Online now: {count}"
+    }
+  },
+  "errors": {
+    "commandFailed": "Command failed: {message}",
+    "notAllowed": "You are not allowed to use this command.",
+    "unknownServer": "Unknown server: `{server}`",
+    "serverNotAvailable": "That server is not available in this Discord server.",
+    "rconStopped": "RCON unavailable: the server is stopped.",
+    "rconUnsupported": "This game does not support listing players over RCON.",
+    "rconError": "RCON error: {message}",
+    "rconRejected": "Command rejected: line breaks and \";\" are not allowed.",
+    "rconSent": "RCON command sent (no output).",
+    "rconFailed": "RCON failed: {message}",
+    "unknownCommand": "I do not know a command called `{command}`. Try `/help`.",
+    "unknownLocale": "I do not know the language `{locale}`. Available: {available}."
+  },
+  "feed": {
+    "enabled": "✅ Feed for <#{channel}> enabled. The next join/leave will show up here.",
+    "disabled": "🔕 Feed disabled for this server here."
+  },
+  "commands": {
+    "servers": {
+      "description": "List every game server with its current state",
+      "notes": "🟢 running, ⚪ stopped, ❓ no answer from the panel (server record disabled or the daemon is not reporting). Use `/status <server>` for one server in detail."
+    },
+    "status": {
+      "description": "Show one server in detail: state, players, RCON support",
+      "notes": "One server in detail: state, player count, who is online and whether RCON works for that game. For the whole list use `/servers`.",
+      "options": {
+        "server": "Server id or alias"
+      }
+    },
+    "players": {
+      "description": "List the players online right now (via RCON)",
+      "notes": "If the server is stopped it answers \"RCON unavailable: the server is stopped\" instead of an error; same if the game cannot list players (like some modded setups).",
+      "options": {
+        "server": "Server id or alias"
+      }
+    },
+    "start": {
+      "description": "Start a game server",
+      "notes": "Shows a progress embed until the panel reports the server as running. A big modded Minecraft server takes 1-2 minutes to be ready; if it takes longer the embed tells you to check the panel.",
+      "options": {
+        "server": "Server id or alias"
+      }
+    },
+    "stop": {
+      "description": "Stop a game server (asks for confirmation when players are online)",
+      "notes": "If somebody is playing, the bot shows the online players and waits for a Confirm/Cancel button (60 seconds) before stopping. Use it as a \"save everyone first\" guard, or `/rcon mc-survival say server restarts in 1 min` before.",
+      "options": {
+        "server": "Server id or alias"
+      }
+    },
+    "restart": {
+      "description": "Restart a game server (asks for confirmation when players are online)",
+      "notes": "Same confirmation as `/stop`. The embed follows the process until it comes back up (a modded Minecraft server can take 1-2 minutes).",
+      "options": {
+        "server": "Server id or alias"
+      }
+    },
+    "rcon": {
+      "description": "Send a raw RCON command to a server (say, whitelist list, ...)",
+      "summary": "operators only",
+      "notes": "Anything the server console accepts, with your own risk: it is not validated. Line breaks and \";\" are rejected on purpose. Very long output is cut at 1800 characters.",
+      "options": {
+        "server": "Server id or alias",
+        "command": "RCON command, e.g. say hello"
+      }
+    },
+    "feed": {
+      "description": "Subscribe or unsubscribe this channel to a server join/leave feed",
+      "notes": "It applies to the channel where you run it, not to the whole server. New subscriptions start silent: the next message comes with the next real join or leave, not with the people already inside.",
+      "options": {
+        "server": "Server id or alias",
+        "state": "Turn the feed on (this channel) or off"
+      }
+    },
+    "autostop": {
+      "description": "Stop a server automatically after N hours without players",
+      "summary": "auto-shutdown when nobody plays",
+      "notes": "The clock only counts while the server is up with 0 players; if it is off, or the panel cannot tell, the clock resets. Anyone joining resets it, and 10 minutes of grace apply after /start, /stop or /restart. Operators only.",
+      "options": {
+        "server": "Server id or alias",
+        "hours": "Hours without players before stopping (0 = turn it off)",
+        "warn": "Minutes of warning in the feed before stopping (0 = no warning)"
+      }
+    },
+    "help": {
+      "description": "How to use the bot: every command, examples and tips",
+      "notes": "The command list is generated from the live commands, so it is always up to date.",
+      "options": {
+        "command": "Get details and examples for one specific command"
+      }
+    },
+    "language": {
+      "description": "Show or change the language the bot writes in, in this Discord",
+      "summary": "per-guild language",
+      "notes": "It changes what the bot writes (embeds, notices, help), not the commands themselves: `/start` is still `/start`. `locale:auto` drops your choice and goes back to the configured language. Operators only.",
+      "options": {
+        "locale": "Language tag, e.g. es-MX (or \"auto\" to go back)"
+      }
+    }
+  },
+  "help": {
+    "title": "GameAP bot — help",
+    "intro": "I control the game servers of your GameAP panel and post who joins and leaves.",
+    "tip": "**Tip:** every `<server>` accepts the alias (e.g. `mc-survival`) or the numeric id.",
+    "detailHint": "Type `/help command:start` (or any other command) for details and examples.",
+    "serversField": "Servers available here",
+    "notes": "Notes",
+    "usage": "Usage",
+    "options": "Options",
+    "required": "required",
+    "optional": "optional",
+    "examples": "Examples",
+    "goodToKnow": "Good to know",
+    "footer": "Type /help for the full list",
+    "categories": {
+      "control": {
+        "title": "🎛️ Control",
+        "blurb": "Turn servers on and off"
+      },
+      "information": {
+        "title": "📊 Information",
+        "blurb": "What is running and who is online"
+      },
+      "utility": {
+        "title": "🛠️ Utility",
+        "blurb": "Console access, notifications and automation"
+      }
+    },
+    "feed": {
+      "title": "📣 Join/leave feed",
+      "body": "A watcher checks the player list every ~20 s and posts \"joined\"/\"left\" in the feed channel.\n`/feed <server> off` silences it **in the channel where you run the command**; `/feed <server> on` brings it back.\nIf a server is stopped, nothing is announced (no fake \"everyone left\" bursts)."
+    }
+  }
+}

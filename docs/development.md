@@ -8,7 +8,7 @@
 - `npm install` once in `/opt/gameap-discord-bot`.
 
 ```bash
-npm test                  # 19 tests, no network or Discord
+npm test                  # 77 tests, no network or Discord
 npm run deploy            # registers the global commands (needs .env)
 npm start                 # run the bot outside Docker (needs .env in the environment)
 docker compose up -d --build
@@ -29,9 +29,15 @@ src/
   embeds.js          status/control/confirm embeds, auto-stop notices, and fan-out
   help.js            general and per-command help, generated from live commands
   logger.js          leveled logging
-  commands/          10 commands: help.js, servers.js, status.js, players.js, start.js,
-                     stop.js, restart.js, rcon.js, feed.js, autostop.js
-  *.test.js          state, config, autostop and help (44 cases)
+  i18n/
+    core.js          pure lookup, plural forms, missing/extra-key detection
+    index.js         catalog loading and the t()/plural() API
+    commands.js      localizes descriptions and options (names stay English)
+    discord-locales.js  our tags -> Discord's (es-MX -> es-419)
+    locales/         en.json (defines every key), es-MX.json
+  commands/          11 commands: help.js, servers.js, status.js, players.js, start.js,
+                     stop.js, restart.js, rcon.js, feed.js, autostop.js, language.js
+  *.test.js          state, config, autostop, help, language and i18n (77 cases)
 docs/                this documentation
 ```
 
@@ -45,16 +51,19 @@ commands. Commands are thin: guard → resolve → call → embed.
 ```js
 import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { autocompleteServers, guardOperator, resolveServerOption } from '../control.js';
+import { localizeCommand, localizeOption } from '../i18n/commands.js';
 import { serverStatus } from '../gameap.js';
 import { statusEmbed } from '../embeds.js';
 
-export const data = new SlashCommandBuilder()
-  .setName('myCommand')
-  .setDescription('What it does, in one line (English)')
-  .setContexts(InteractionContextType.Guild)
-  .addStringOption((option) =>
-    option.setName('server').setDescription('Server id or alias').setRequired(true).setAutocomplete(true),
-  );
+export const data = localizeCommand(
+  new SlashCommandBuilder()
+    .setName('myCommand')
+    .setContexts(InteractionContextType.Guild)
+    .addStringOption((option) =>
+      localizeOption(option.setName('server').setRequired(true).setAutocomplete(true), 'myCommand', 'server'),
+    ),
+  'myCommand',
+);
 
 export const autocomplete = autocompleteServers;
 
@@ -75,22 +84,42 @@ export async function execute(interaction) {
 ```
 
 2. Add it to a category in `CATEGORIES` in `src/help.js` (for the general help).
-3. `npm test` — the help test fails if you forgot `help` or the category.
+3. `npm test` — the help test fails if you forgot `help` or the category, and the coverage test
+   fails if the text is not in the catalogs (`commands.myCommand.description` and
+   `commands.myCommand.options.server`, see [Adding a language](#adding-a-language)).
 4. `npm run deploy` to register it on Discord (global).
 5. `docker compose up -d --build` so the bot loads it (`loaded N commands`).
 
 Conventions:
 
 - One command per file; export `data`, `execute`, `help` and, when applicable, `autocomplete`.
-- User-facing text **in English** (your server's friends use it); docs are bilingual — English first
+- User-facing text is **localized**: descriptions and options come from the catalogs (English
+  base + `es-MX`, picked per guild — see [i18n.md](i18n.md)); docs are bilingual — English first
   in `docs/`, Spanish mirror in `docs/es/`, with the root `README.md` / `README.es.md` pair.
 - User errors with `MessageFlags.Ephemeral` when they're only for the invoker; result embeds are public.
 - Information commands don't use `guardOperator`; control commands do.
 - Commands use `setContexts(InteractionContextType.Guild)`: no DMs.
 
+## Adding a language
+
+The base catalog is `src/i18n/locales/en.json` — it defines every key; the other catalogs translate
+it one-to-one. To add a language:
+
+1. Create `src/i18n/locales/<tag>.json` with exactly the same keys as `en.json` (copy it and
+   translate — missing and extra keys both fail the tests).
+2. To localize the command metadata in Discord too, add the tag to `src/i18n/discord-locales.js`
+   (e.g. `'es-MX': 'es-419'` — Discord has no `es-MX`).
+3. `npm test` — the parity guards catch missing/extra keys, keys the code asks for that do not
+   exist, and user-facing strings that leaked back into the code.
+4. `npm run deploy` to publish the localizations.
+
+The language is **per guild**; `/language locale:auto` clears the override and the guild falls
+back to `guilds.json`, `defaults`, `DEFAULT_LOCALE`, then English. See [i18n.md](i18n.md) for the
+full detail.
+
 ## Tests
 
-`node --test src/*.test.js` (no network, no Discord):
+`node --test src/*.test.js src/i18n/*.test.js` (no network, no Discord):
 
 | File | What it covers |
 |---|---|
@@ -98,6 +127,9 @@ Conventions:
 | `config.test.js` | alias resolution, per-guild visibility, `feedTarget` precedence, `pollTargets` |
 | `help.test.js` | that **all** commands have help and a category, `usageOf()` per command, that embeds build, and `/help` autocomplete |
 | `autostop.test.js` | config resolution, clock accumulation/reset/freeze, warn/stop, duration format, `/autostop` contract and its embeds |
+| `language.test.js` | `/language` contract: show, set, `auto` to clear, unknown locale, autocomplete |
+| `i18n.test.js` | `t()`/`plural()` behavior, locale resolution and fallbacks, catalog completeness, Discord locale mapping |
+| `coverage.test.js` | every key the code asks for exists in the base catalog; no user-facing string left in the code |
 
 Tests inject config with `__setConfig()` (they don't touch the filesystem) and write to temporary
 paths via `STATE_FILE`/`FEEDS_STATE_FILE`.
@@ -151,5 +183,4 @@ curl -s "https://discord.com/api/v10/applications/<APP_ID>/guilds/<GUILD_ID>/com
 - Container healthcheck (for example, write a timestamp in `data/state.json` and check it).
 - Automatic per-guild registration in `guildCreate` (today it only logs the new guild and asks
   you to edit `config/guilds.json`).
-- i18n of texts into Spanish per guild, if your server's friends ask for it.
 - Feed metrics (notices sent, failures) on a local endpoint.
