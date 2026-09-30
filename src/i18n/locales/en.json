@@ -1,5 +1,93 @@
 {
+  "actions": {
+    "start": "start",
+    "stop": "stop",
+    "restart": "restart"
+  },
+  "buttons": {
+    "cancel": "Cancel",
+    "confirm": {
+      "start": "Yes, start",
+      "stop": "Yes, stop",
+      "restart": "Yes, restart"
+    }
+  },
+  "embeds": {
+    "servers": {
+      "title": "Game servers",
+      "empty": "No servers available.",
+      "line": "{emoji} **{label}** `#{id}` — {game} · {ip}:{port}"
+    },
+    "status": {
+      "state": "State",
+      "running": "🟢 running",
+      "stopped": "⚪ stopped",
+      "players": "Players",
+      "autoStop": "Auto-stop",
+      "onlineNow": "Online now",
+      "noRcon": "RCON is not configured for this server"
+    },
+    "control": {
+      "title": "{title} — {action}",
+      "starting": "Starting…",
+      "stopping": "Stopping…",
+      "restarting": "Restarting…",
+      "online": "🟢 Online",
+      "offline": "⚪ Stopped",
+      "error": "⚠️ Failed",
+      "cancelled": "Cancelled",
+      "task": "Daemon task #{taskId}",
+      "note": "Note",
+      "alreadyRunning": "It was already running.",
+      "alreadyStopped": "It was already stopped.",
+      "stillWorking": "Still working — open the GameAP panel to watch the console."
+    },
+    "confirm": {
+      "title": "{title} — confirm {action}",
+      "players_one": "**{count}** player is online:",
+      "players_other": "**{count}** players are online:",
+      "footer": "This will affect them. Confirm within 60s."
+    },
+    "players": {
+      "title": "{title} — players",
+      "none": "No players online."
+    },
+    "autostop": {
+      "title": "{title} — auto-stop",
+      "off": "off",
+      "clockIdle": "⏳ {hours}h · {idle} idle",
+      "clockZero": "{hours}h · idle clock at 0",
+      "warning": "⏳ No players for **{idle}** — stopping in **{minutes}m** unless someone joins.",
+      "warningFooter": "Auto-stop after {hours}h idle · /autostop {alias} hours:0 to disable",
+      "stopped": "😴 Stopped after **{idle}** with no players.",
+      "startAgainFooter": "Start it again with /start {alias}",
+      "dryRunFooter": "DRY RUN — nothing was stopped",
+      "disabled": "**Disabled.** This server will not stop by itself.",
+      "enableField": "Enable it",
+      "enableExample": "`/autostop {alias} hours:2`",
+      "summaryWarn": "Stops the server after **{hours}h** with no players, with a warning **{warn}m** before.",
+      "summaryNoWarn": "Stops the server after **{hours}h** with no players, with no warning message.",
+      "settingFrom": "Setting from",
+      "settingOverride": "`/autostop` (Discord)",
+      "idleNow": "Idle now",
+      "stopsIn": "Stops in",
+      "notifiedIn": "Notified in this Discord",
+      "noChannel": "no channel subscribed here — use `/feed` to add one",
+      "disableFooter": "Disable with /autostop {alias} hours:0"
+    },
+    "feed": {
+      "joined": "🟢 **joined:** {players}",
+      "left": "🔴 **left:** {players}",
+      "onlineNow": "Online now: {count}"
+    }
+  },
   "errors": {
-    "commandFailed": "Command failed: {message}"
+    "commandFailed": "Command failed: {message}",
+    "notAllowed": "You are not allowed to use this command.",
+    "unknownServer": "Unknown server: `{server}`",
+    "serverNotAvailable": "That server is not available in this Discord server.",
+    "rconStopped": "RCON unavailable: the server is stopped.",
+    "rconUnsupported": "This game does not support listing players over RCON.",
+    "rconError": "RCON error: {message}"
   }
 }

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { autocompleteServers, guardOperator, resolveServerOption } from '../control.js';
-import { autoStopConfig, setAutoStopOverrides } from '../config.js';
+import { autoStopConfig, localeFor, setAutoStopOverrides } from '../config.js';
 import { getState, loadAutoStop, saveAutoStop } from '../state.js';
 import { evaluateIdle } from '../autostop.js';
 import { autostopStatusEmbed } from '../embeds.js';
@@ -41,11 +41,11 @@ export const help = {
     'The clock only counts while the server is up with 0 players; if it is off, or the panel cannot tell, the clock resets. Anyone joining resets it, and 10 minutes of grace apply after /start, /stop or /restart. Operators only.',
 };
 
-function statusView(serverId, guildId) {
+function statusView(serverId, guildId, locale) {
   const cfg = autoStopConfig(serverId);
   const idle = getState().servers[String(serverId)]?.idle;
   const verdict = evaluateIdle(idle, cfg, { nowMs: Date.now() });
-  return autostopStatusEmbed(serverId, cfg, {
+  return autostopStatusEmbed(locale, serverId, cfg, {
     idleMs: verdict.idleMs,
     minutesLeft: Number.isFinite(verdict.remainingMs) ? verdict.remainingMs : null,
     guildId,
@@ -57,11 +57,12 @@ export async function execute(interaction) {
   const serverId = await resolveServerOption(interaction);
   if (!serverId) return;
 
+  const locale = localeFor(interaction.guildId);
   const hours = interaction.options.getInteger('hours');
   const warn = interaction.options.getInteger('warn');
 
   if (hours === null && warn === null) {
-    await interaction.reply({ embeds: [statusView(serverId, interaction.guildId)] });
+    await interaction.reply({ embeds: [statusView(serverId, interaction.guildId, locale)] });
     return;
   }
 
@@ -79,5 +80,5 @@ export async function execute(interaction) {
   saveAutoStop(overrides);
   setAutoStopOverrides(overrides);
 
-  await interaction.reply({ embeds: [statusView(serverId, interaction.guildId)] });
+  await interaction.reply({ embeds: [statusView(serverId, interaction.guildId, locale)] });
 }

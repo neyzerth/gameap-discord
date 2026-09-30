@@ -2,7 +2,7 @@ import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { serverStatus, rconFeatures, playerNames } from '../gameap.js';
 import { statusEmbed } from '../embeds.js';
 import { autocompleteServers, resolveServerOption } from '../control.js';
-import { autoStopConfig } from '../config.js';
+import { autoStopConfig, localeFor } from '../config.js';
 import { evaluateIdle } from '../autostop.js';
 import { getState } from '../state.js';
 
@@ -41,6 +41,6 @@ export async function execute(interaction) {
     : { hours: 0, idleMs: 0 };
 
   await interaction.editReply({
-    embeds: [statusEmbed(serverId, status, players, features, autoStop)],
+    embeds: [statusEmbed(localeFor(interaction.guildId), serverId, status, players, features, autoStop)],
   });
 }

@@ -2,6 +2,8 @@ import { SlashCommandBuilder, InteractionContextType } from 'discord.js';
 import { serverStatus, rconFeatures, playerNames } from '../gameap.js';
 import { playersEmbed } from '../embeds.js';
 import { autocompleteServers, resolveServerOption } from '../control.js';
+import { localeFor } from '../config.js';
+import { t } from '../i18n/index.js';
 
 export const data = new SlashCommandBuilder()
   .setName('players')
@@ -23,12 +25,14 @@ export async function execute(interaction) {
   const serverId = await resolveServerOption(interaction);
   if (!serverId) return;
 
+  const locale = localeFor(interaction.guildId);
+
   await interaction.deferReply();
 
   const status = await serverStatus(serverId).catch(() => null);
   if (status && !status.processActive) {
     await interaction.editReply({
-      embeds: [playersEmbed(serverId, []).setDescription('RCON unavailable: the server is stopped.')],
+      embeds: [playersEmbed(locale, serverId, []).setDescription(t(locale, 'errors.rconStopped'))],
     });
     return;
   }
@@ -36,19 +40,19 @@ export async function execute(interaction) {
   const features = await rconFeatures(serverId).catch(() => null);
   if (features && features.playersList === false) {
     await interaction.editReply({
-      embeds: [playersEmbed(serverId, []).setDescription('This game does not support listing players over RCON.')],
+      embeds: [playersEmbed(locale, serverId, []).setDescription(t(locale, 'errors.rconUnsupported'))],
     });
     return;
   }
 
   try {
     const players = await playerNames(serverId);
-    await interaction.editReply({ embeds: [playersEmbed(serverId, players)] });
+    await interaction.editReply({ embeds: [playersEmbed(locale, serverId, players)] });
   } catch (err) {
     await interaction.editReply({
       embeds: [
-        playersEmbed(serverId, []).setDescription(
-          `RCON error: ${err.status ?? ''} ${err.message}`.trim(),
+        playersEmbed(locale, serverId, []).setDescription(
+          t(locale, 'errors.rconError', { message: `${err.status ?? ''} ${err.message}`.trim() }),
         ),
       ],
     });

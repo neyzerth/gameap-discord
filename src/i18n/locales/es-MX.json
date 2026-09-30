@@ -1,5 +1,93 @@
 {
+  "actions": {
+    "start": "iniciar",
+    "stop": "detener",
+    "restart": "reiniciar"
+  },
+  "buttons": {
+    "cancel": "Cancelar",
+    "confirm": {
+      "start": "Sí, encender",
+      "stop": "Sí, apagar",
+      "restart": "Sí, reiniciar"
+    }
+  },
+  "embeds": {
+    "servers": {
+      "title": "Servidores de juego",
+      "empty": "No hay servidores disponibles.",
+      "line": "{emoji} **{label}** `#{id}` — {game} · {ip}:{port}"
+    },
+    "status": {
+      "state": "Estado",
+      "running": "🟢 encendido",
+      "stopped": "⚪ apagado",
+      "players": "Jugadores",
+      "autoStop": "Auto-apagado",
+      "onlineNow": "En línea ahora",
+      "noRcon": "RCON no está configurado en este servidor"
+    },
+    "control": {
+      "title": "{title} — {action}",
+      "starting": "Encendiendo…",
+      "stopping": "Apagando…",
+      "restarting": "Reiniciando…",
+      "online": "🟢 En línea",
+      "offline": "⚪ Apagado",
+      "error": "⚠️ Falló",
+      "cancelled": "Cancelado",
+      "task": "Tarea del daemon #{taskId}",
+      "note": "Nota",
+      "alreadyRunning": "Ya estaba encendido.",
+      "alreadyStopped": "Ya estaba apagado.",
+      "stillWorking": "Sigue en proceso — abre el panel de GameAP para ver la consola."
+    },
+    "confirm": {
+      "title": "{title} — ¿{action}?",
+      "players_one": "**{count}** jugador está en línea:",
+      "players_other": "**{count}** jugadores están en línea:",
+      "footer": "Esto les afecta. Confirma en 60 s."
+    },
+    "players": {
+      "title": "{title} — jugadores",
+      "none": "No hay jugadores en línea."
+    },
+    "autostop": {
+      "title": "{title} — auto-apagado",
+      "off": "desactivado",
+      "clockIdle": "⏳ {hours} h · {idle} inactivo",
+      "clockZero": "{hours} h · reloj de inactividad en 0",
+      "warning": "⏳ Sin jugadores desde hace **{idle}** — se apaga en **{minutes} min** si nadie entra.",
+      "warningFooter": "Auto-apagado tras {hours} h sin jugadores · /autostop {alias} hours:0 para desactivarlo",
+      "stopped": "😴 Apagado tras **{idle}** sin jugadores.",
+      "startAgainFooter": "Vuelve a encenderlo con /start {alias}",
+      "dryRunFooter": "DRY RUN — no se apagó nada",
+      "disabled": "**Desactivado.** Este servidor no se apagará solo.",
+      "enableField": "Actívalo",
+      "enableExample": "`/autostop {alias} hours:2`",
+      "summaryWarn": "Apaga el servidor tras **{hours} h** sin jugadores, con aviso **{warn} min** antes.",
+      "summaryNoWarn": "Apaga el servidor tras **{hours} h** sin jugadores, sin mensaje de aviso.",
+      "settingFrom": "Ajuste desde",
+      "settingOverride": "`/autostop` (Discord)",
+      "idleNow": "Inactivo ahora",
+      "stopsIn": "Se apaga en",
+      "notifiedIn": "Aviso en este Discord",
+      "noChannel": "no hay canal suscrito aquí — usa `/feed` para añadir uno",
+      "disableFooter": "Desactívalo con /autostop {alias} hours:0"
+    },
+    "feed": {
+      "joined": "🟢 **entró:** {players}",
+      "left": "🔴 **salió:** {players}",
+      "onlineNow": "En línea ahora: {count}"
+    }
+  },
   "errors": {
-    "commandFailed": "El comando falló: {message}"
+    "commandFailed": "El comando falló: {message}",
+    "notAllowed": "No tienes permiso para usar este comando.",
+    "unknownServer": "Servidor desconocido: `{server}`",
+    "serverNotAvailable": "Ese servidor no está disponible en este Discord.",
+    "rconStopped": "RCON no disponible: el servidor está apagado.",
+    "rconUnsupported": "Este juego no permite listar jugadores por RCON.",
+    "rconError": "Error de RCON: {message}"
   }
 }

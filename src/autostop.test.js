@@ -151,21 +151,41 @@ test('/autostop expone server, hours y warn (solo en guild)', async () => {
 test('los embeds de auto-stop se construyen con el texto esperado', async () => {
   const { autostopWarningEmbed, autoStopEmbed, autostopStatusEmbed } = await import('./embeds.js');
 
-  const warn = autostopWarningEmbed('8', HOUR + 50 * MIN, 10, { hours: 2, warnMinutes: 15 }).toJSON();
+  const warn = autostopWarningEmbed('en', '8', HOUR + 50 * MIN, 10, { hours: 2, warnMinutes: 15 }).toJSON();
   assert.match(warn.description, /stopping in \*\*10m\*\*/);
   assert.match(warn.footer.text, /hours:0 to disable/);
 
-  const stopped = autoStopEmbed('8', 2 * HOUR).toJSON();
+  const stopped = autoStopEmbed('en', '8', 2 * HOUR).toJSON();
   assert.match(stopped.description, /Stopped after \*\*2h 00m\*\*/);
   assert.match(stopped.footer.text, /\/start/);
 
-  const dry = autoStopEmbed('8', 2 * HOUR, { dryRun: true }).toJSON();
+  const dry = autoStopEmbed('en', '8', 2 * HOUR, { dryRun: true }).toJSON();
   assert.match(dry.footer.text, /DRY RUN/);
 
-  const off = autostopStatusEmbed('8', null).toJSON();
+  const off = autostopStatusEmbed('en', '8', null).toJSON();
   assert.match(off.description, /Disabled/);
 
-  const on = autostopStatusEmbed('8', { hours: 2, warnMinutes: 15, source: 'override' }, { idleMs: HOUR, minutesLeft: HOUR }).toJSON();
+  const on = autostopStatusEmbed('en', '8', { hours: 2, warnMinutes: 15, source: 'override' }, { idleMs: HOUR, minutesLeft: HOUR }).toJSON();
   assert.match(on.description, /with no players/);
   assert.ok(on.fields.some((f) => f.name === 'Stops in'));
+});
+
+test('el mismo aviso sale en el idioma de cada guild', async () => {
+  const { autostopWarningEmbed, confirmEmbed, serversEmbed } = await import('./embeds.js');
+
+  const es = autostopWarningEmbed('es-MX', '8', HOUR, 10, { hours: 2, warnMinutes: 15 }).toJSON();
+  assert.match(es.description, /se apaga en \*\*10 min\*\*/);
+  assert.match(es.footer.text, /hours:0 para desactivarlo/);
+
+  const one = confirmEmbed('es-MX', '8', 'stop', ['alice']).toJSON();
+  assert.match(one.description, /\*\*1\*\* jugador está en línea/);
+  const two = confirmEmbed('es-MX', '8', 'stop', ['alice', 'bob']).toJSON();
+  assert.match(two.description, /\*\*2\*\* jugadores están en línea/);
+  assert.match(confirmEmbed('en', '8', 'stop', ['alice', 'bob']).toJSON().description, /\*\*2\*\* players are online/);
+
+  const lista = serversEmbed('es-MX', [{ id: 8, game_id: 'minecraft', server_ip: '1.2.3.4', server_port: 25565 }]).toJSON();
+  assert.equal(lista.title, 'Servidores de juego');
+  assert.match(lista.description, /`#8` — minecraft · 1\.2\.3\.4:25565/); // línea localizada, sin depender del label real
+  assert.equal(serversEmbed('en', []).toJSON().description, 'No servers available.');
+  assert.equal(serversEmbed('es-MX', []).toJSON().description, 'No hay servidores disponibles.');
 });
