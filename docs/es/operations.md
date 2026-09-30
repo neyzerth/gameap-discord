@@ -50,6 +50,42 @@ Si tocaste `src/commands/` (nombre, descripción u opciones), **además**:
 npm run deploy
 ```
 
+## Usar la imagen publicada
+
+El workflow `docker` (`.github/workflows/docker.yml`) corre toda la suite y publica la imagen en
+el GitHub Container Registry:
+
+| De dónde viene el build | Etiquetas que publica |
+|---|---|
+| push a `main` | `latest`, `sha-<corto>` |
+| tag `v1.2.3` | `1.2.3`, `1.2`, `latest`, `sha-<corto>` |
+| pull request | nada: solo compila, para validar el Dockerfile |
+| manual ("Run workflow") | las mismas etiquetas de la referencia donde corra |
+
+Para correr desde el registro en vez de construir en el host, cambia el bloque `build:` por la
+imagen; el resto del servicio no cambia (`env_file`, los montajes `./data` y `./config`,
+`network_mode: host`):
+
+```yaml
+services:
+  gameap-bot:
+    image: ghcr.io/neyzerth/gameap-discord:latest
+    # build:              # puedes dejar los dos: con --build construye local
+    #   context: .
+    #   network: host
+```
+
+Después `docker compose pull && docker compose up -d`. Fija una versión (`:1.2.3`) si prefieres
+no seguir `latest`.
+
+La imagen lleva **solo** `config/*.example.json`: el `.dockerignore` deja fuera del contexto de
+build el `.env`, `config/servers.json` y `config/guilds.json`, así que una imagen que baje
+cualquiera no trae ids ni tokens. Por eso mismo, un contenedor arrancado desde la imagen
+**necesita** tu config montada (o `SERVERS_FILE`/`GUILDS_FILE` apuntando a ella) y el `.env`
+pasado con `env_file`. El paquete nace privado: ajusta su visibilidad en la configuración del
+paquete en GitHub si lo quieres público — y si sigue privado, haz `docker login ghcr.io` en el
+host antes.
+
 ## Registro de comandos: una sola fuente
 
 ```mermaid

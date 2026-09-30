@@ -1,0 +1,26 @@
+# La imagen se publica: nada de secretos ni de estado local dentro.
+# El compose monta ./config y ./data, y pasa .env con env_file, así que excluirlos
+# del contexto no cambia el runtime — evita que config/servers.json (ids reales),
+# config/guilds.json, .env y data/ acaben dentro de una imagen que cualquiera puede
+# bajar del registro.
+.env
+.env.*
+!.env.example
+config/servers.json
+config/guilds.json
+data/
+.docs-leaks
+
+# Ruido de build: no se copia nada de esto (el Dockerfile solo usa
+# package*.json, src y config), pero dejarlo fuera ahorra contexto y tiempo.
+.git
+.gitignore
+.github
+compose.yaml
+Dockerfile
+node_modules
+npm-debug.log*
+docs/
+README.md
+README.es.md
+LICENSE

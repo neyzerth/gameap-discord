@@ -50,6 +50,41 @@ If you touched `src/commands/` (name, description, or options), **also**:
 npm run deploy
 ```
 
+## Using the published image
+
+The `docker` workflow (`.github/workflows/docker.yml`) runs the whole suite and publishes the
+image to the GitHub Container Registry:
+
+| Where the build comes from | Tags published |
+|---|---|
+| push to `main` | `latest`, `sha-<short>` |
+| tag `v1.2.3` | `1.2.3`, `1.2`, `latest`, `sha-<short>` |
+| pull request | nothing: it only compiles, to validate the Dockerfile |
+| manual ("Run workflow") | the same tags as the ref it runs on |
+
+To run from the registry instead of building on the host, swap the `build:` block for the image;
+everything else in the service stays the same (`env_file`, the `./data` and `./config` mounts,
+`network_mode: host`):
+
+```yaml
+services:
+  gameap-bot:
+    image: ghcr.io/neyzerth/gameap-discord:latest
+    # build:              # you can keep both: --build then builds locally
+    #   context: .
+    #   network: host
+```
+
+Then `docker compose pull && docker compose up -d`. Pin a version (`:1.2.3`) if you would rather
+not follow `latest`.
+
+The image ships **only** `config/*.example.json`: `.dockerignore` keeps `.env`,
+`config/servers.json` and `config/guilds.json` out of the build context, so an image pulled by
+anyone carries no ids and no tokens. That is also why a container started from the image needs
+your config mounted (or `SERVERS_FILE`/`GUILDS_FILE` pointing at it) and `.env` passed with
+`env_file`. The package starts private: adjust its visibility in the package settings on GitHub
+if you want it public — and if it stays private, `docker login ghcr.io` on the host first.
+
 ## Command registration: a single source
 
 ```mermaid

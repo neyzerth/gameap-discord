@@ -1,3 +1,4 @@
+import './test-config.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadCommands, usageOf, COMMANDS_DIR } from './registry.js';

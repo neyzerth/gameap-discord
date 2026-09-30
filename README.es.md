@@ -9,6 +9,7 @@ un jugador.
 ![Licencia: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node >= 22](https://img.shields.io/badge/node-%3E%3D22-339933.svg?logo=node.js&logoColor=white)
 ![discord.js v14](https://img.shields.io/badge/discord.js-v14-5865F2.svg?logo=discord&logoColor=white)
+[![docker](https://github.com/neyzerth/gameap-discord/actions/workflows/docker.yml/badge.svg)](https://github.com/neyzerth/gameap-discord/actions/workflows/docker.yml)
 
 - **Comandos slash** — `/servers`, `/status`, `/start`, `/stop`, `/restart`, `/players`, `/rcon`,
   `/feed`, `/autostop`, `/help`, `/language`.
