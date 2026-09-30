@@ -8,7 +8,7 @@ const {
 const { isOperator } = await import('./permissions.js');
 
 const SERVERS = {
-  8: { alias: 'ludopatia', label: 'Ludopatía', announce: true },
+  8: { alias: 'mc-survival', label: 'MC Survival', announce: true },
   2: { alias: 'oceanblock', label: 'OceanBlock' },
 };
 
@@ -36,9 +36,9 @@ test('guild config wins over defaults', () => {
 });
 
 test('server resolution accepts id and alias', () => {
-  assert.equal(resolveServer('ludopatia'), '8');
+  assert.equal(resolveServer('mc-survival'), '8');
   assert.equal(resolveServer('8'), '8');
-  assert.equal(resolveServer('LUDOPATIA'), '8');
+  assert.equal(resolveServer('MC-SURVIVAL'), '8');
   assert.equal(resolveServer('nope'), null);
 });
 

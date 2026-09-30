@@ -43,7 +43,7 @@ export function generalEmbed(commands, guildId) {
     .setDescription(
       [
         'I control the game servers of your GameAP panel and post who joins and leaves.',
-        '**Tip:** every `<server>` accepts the alias (e.g. `ludopatia`) or the numeric id.',
+        '**Tip:** every `<server>` accepts the alias (e.g. `mc-survival`) or the numeric id.',
         'Type `/help command:start` (or any other command) for details and examples.',
       ].join('\n'),
     )

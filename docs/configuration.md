@@ -1,64 +1,71 @@
-# Configuración
+**English** · [Español](es/configuration.md)
 
-Cuatro archivos JSON de configuración/estado, un `.env` y un quinto JSON para los overrides del
-auto-apagado. Los `config/*.json` son **versionables** (catálogo y comportamiento por guild); los
-`data/*.json` son **estado en runtime** y se pueden borrar sin perder configuración.
+# Configuration
+
+Four JSON config/state files, a `.env` and a fifth JSON for the auto-shutdown overrides. Inside
+`config/`, the repo only commits the **`*.example.json` templates**: the real `config/servers.json`
+and `config/guilds.json` are local (they are listed in `.gitignore`) because they carry the ids of
+your guilds, channels and game servers. The `data/*.json` files are **runtime state** and can be
+deleted without losing configuration.
 
 ```
-compose.yaml          contenedor (host network, user 1000, mounts)
-.env                  secretos: DISCORD_TOKEN, GAMEAP_TOKEN (chmod 600, nunca al repo)
-config/servers.json   catálogo de game servers: alias, label, emoji, announce, autoStop
-config/guilds.json    por Discord: canal de feed, roles operadores, servidores visibles
-data/state.json       watcher: jugadores conocidos, reloj de inactividad y suscripciones
-data/feeds.json       overrides de /feed (on/off y canal)
-data/autostop.json    overrides de /autostop (por servidor)
+compose.yaml          container (host network, user 1000, mounts)
+.env                  secrets: DISCORD_TOKEN, GAMEAP_TOKEN (chmod 600, never in the repo)
+config/servers.json   game server catalog: alias, label, emoji, announce, autoStop
+config/guilds.json    per Discord: feed channel, operator roles, visible servers
+data/state.json       watcher: known players, inactivity clock and subscriptions
+data/feeds.json       /feed overrides (on/off and channel)
+data/autostop.json    /autostop overrides (per server)
 ```
 
-## Variables de entorno
+First time (or a fresh clone):
 
-| Variable | Default | Para qué |
+```bash
+cp config/servers.example.json config/servers.json
+cp config/guilds.example.json  config/guilds.json    # and edit the real alias/label/ids
+```
+
+## Environment variables
+
+| Variable | Default | Purpose |
 |---|---|---|
-| `DISCORD_TOKEN` | — | Token del bot (obligatorio) |
-| `GAMEAP_TOKEN` | — | PAT del panel (obligatorio) |
-| `GAMEAP_API_URL` | `http://127.0.0.1:8025` | Base de la API del panel |
-| `POLL_INTERVAL_MS` | `20000` | Intervalo del watcher (20 s) |
+| `DISCORD_TOKEN` | — | Bot token (required) |
+| `GAMEAP_TOKEN` | — | Panel PAT (required) |
+| `GAMEAP_API_URL` | `http://127.0.0.1:8025` | Panel API base URL |
+| `POLL_INTERVAL_MS` | `20000` | Watcher poll interval (20 s) |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
-| `AUTOSTOP_DRY_RUN` | `false` | `true` = el auto-apagado solo loguea y anuncia lo que haría, **no** apaga (ojo: se lee al crear el contenedor, hace falta `docker compose up -d`) |
-| `AUTOSTOP_FILE` | `./data/autostop.json` | Overrides de `/autostop` |
-| `SERVERS_FILE` | `./config/servers.json` | Catálogo |
-| `GUILDS_FILE` | `./config/guilds.json` | Config por guild |
-| `STATE_FILE` | `./data/state.json` | Estado del watcher |
-| `FEEDS_STATE_FILE` | `./data/feeds.json` | Overrides de `/feed` |
-| `DISCORD_APP_ID` | — | Solo informativo: `deploy-commands.js` resuelve el id desde el token |
+| `AUTOSTOP_DRY_RUN` | `false` | `true` = auto-shutdown only logs and announces what it would do, **does not** shut down (note: it is read when the container is created; `docker compose up -d` is needed) |
+| `AUTOSTOP_FILE` | `./data/autostop.json` | `/autostop` overrides |
+| `SERVERS_FILE` | `./config/servers.json` | Catalog |
+| `GUILDS_FILE` | `./config/guilds.json` | Per-guild config |
+| `STATE_FILE` | `./data/state.json` | Watcher state |
+| `FEEDS_STATE_FILE` | `./data/feeds.json` | `/feed` overrides |
+| `DISCORD_APP_ID` | — | Informational only: `deploy-commands.js` resolves the id from the token |
 
-`DISCORD_GUILD_ID` **no** lo usa el código. Antes servía de fallback para el registro por guild y
-era la causa de comandos duplicados; hoy el registro por guild exige `--guild <id>` explícito.
+`DISCORD_GUILD_ID` is **not** used by the code. It used to serve as the fallback for guild-scoped registration and was the cause of duplicate commands; today guild-scoped registration requires an explicit `--guild <id>`.
 
 ## `config/servers.json`
 
-Clave = id del servidor en el panel (string). `announce: true` es lo que mete al servidor en el
-sondeo del watcher.
+Key = server id in the panel (string). `announce: true` is what puts the server into the watcher poll.
 
-| Campo | Obligatorio | Efecto |
+| Field | Required | Effect |
 |---|---|---|
-| `alias` | recomendado | Nombre corto para los comandos (`/start ludopatia`) y valor del autocompletado |
-| `label` | recomendado | Nombre bonito en los embeds (`Ludopatía` en vez de `Ludopatia Server 1.20`) |
-| `emoji` | no | Prefijo del título del embed (`🎲 Ludopatía`) |
-| `announce` | no | `true` = el watcher lo sondea y puede alimentar feeds |
-| `autoStop` | no | `{ "hours": 2, "warnMinutes": 15 }` = apagado automático tras N horas sin jugadores (ver [autostop.md](autostop.md)) |
+| `alias` | recommended | Short name for commands (`/start mc-survival`) and the autocomplete value |
+| `label` | recommended | Nice name in the embeds (`MC Survival` instead of `MC Survival Server 1.20`) |
+| `emoji` | no | Embed title prefix (`🎲 MC Survival`) |
+| `announce` | no | `true` = the watcher polls it and it can feed feeds |
+| `autoStop` | no | `{ "hours": 2, "warnMinutes": 15 }` = automatic shutdown after N hours without players (see [autostop.md](autostop.md)) |
 
 ```json
 {
-  "8": { "alias": "ludopatia", "label": "Ludopatía", "emoji": "🎲", "announce": true,
+  "8": { "alias": "mc-survival", "label": "MC Survival", "emoji": "🎲", "announce": true,
          "autoStop": { "hours": 2, "warnMinutes": 15 } }
 }
 ```
 
-Un servidor con `autoStop` se sondea aunque **no** tenga `announce: true` (el reloj de inactividad se
-alimenta del mismo ciclo), pero sin `announce` no habrá feed de jugadores.
+A server with `autoStop` is polled even **without** `announce: true` (the inactivity clock is fed from the same cycle), but without `announce` there is no player feed.
 
-Servidores fuera de este archivo **no existen** para el bot (no salen en `/servers` ni en el
-autocompletado, y no se pueden usar en ningún comando).
+Servers outside this file **do not exist** for the bot (they don't show up in `/servers` or in autocomplete, and can't be used in any command).
 
 ## `config/guilds.json`
 
@@ -66,105 +73,95 @@ autocompletado, y no se pueden usar en ningún comando).
 {
   "defaults": { "operatorRoleIds": [], "feedChannelId": null, "servers": null },
   "guilds": {
-    "1408342037538799616": {
-      "feedChannelId": "1554590063541620897",
+    "123456789012345678": {
+      "feedChannelId": "234567890123456789",
       "operatorRoleIds": [],
       "servers": ["8"],
-      "feeds": { "8": "1554590063541620897" }
+      "feeds": { "8": "234567890123456789" }
     },
-    "1541489406920360017": { "operatorRoleIds": [], "servers": null }
+    "345678901234567890": { "operatorRoleIds": [], "servers": null }
   }
 }
 ```
 
-| Campo | Default | Efecto |
+| Field | Default | Effect |
 |---|---|---|
-| `operatorRoleIds` | `[]` | `[]` → **cualquiera** puede usar los comandos de control (setup actual de amigos de confianza). Con ids → solo quien tenga uno de esos roles |
-| `servers` | `null` | `null` → ve todos los de `servers.json`. Con lista → solo esos ids |
-| `feedChannelId` | `null` | Canal por defecto del feed para ese guild |
-| `feeds` | `{}` | Canal específico por servidor: `{ "<serverId>": "<channelId>" }` |
+| `operatorRoleIds` | `[]` | `[]` → **anyone** can use the control commands (current setup: trusted friends). With ids → only those holding one of those roles |
+| `servers` | `null` | `null` → sees all from `servers.json`. With a list → only those ids |
+| `feedChannelId` | `null` | Default feed channel for that guild |
+| `feeds` | `{}` | Per-server specific channel: `{ "<serverId>": "<channelId>" }` |
 
-`defaults` se aplica a los guilds que no declaran el campo: así un guild nuevo hereda "todos los
-servidores, sin operadores restringidos, sin feed" y se ajusta después.
+`defaults` applies to guilds that don't declare the field: a new guild inherits "all servers, no restricted operators, no feed" and is adjusted afterwards.
 
-Un guild que **no** está en el archivo igual puede usar los comandos (con los defaults), pero no
-tiene feed hasta que se configure o alguien use `/feed <server> on`.
+A guild **not** in the file can still use the commands (with the defaults), but has no feed until it is configured or someone uses `/feed <server> on`.
 
-## Precedencia del canal de feed
+## Feed channel precedence
 
-El watcher pregunta `feedTarget(guildId, serverId)` y resuelve en este orden: gana el primero que
-exista.
+The watcher asks `feedTarget(guildId, serverId)` and resolves in this order: the first one that exists wins.
 
 ```mermaid
 flowchart TD
-  A["servidor en pollTargets()<br/>announce = true"] --> B{"isAnnounceOn<br/>guild + server"}
-  B -- "override off" --> NO["no anuncia"]
-  B -- "override on / announce true" --> C{"¿override con canal?<br/>data/feeds.json"}
-  C -- sí --> CH1["canal del /feed más reciente"]
-  C -- no --> D{"¿feeds del guild?<br/>config/guilds.json"}
-  D -- sí --> CH2["feeds[serverId]"]
-  D -- no --> E{"¿feedChannelId del guild?"}
-  E -- sí --> CH3["feedChannelId"]
-  E -- no --> NO2["no anuncia"]
+  A["server in pollTargets()<br/>announce = true"] --> B{"isAnnounceOn<br/>guild + server"}
+  B -- "override off" --> NO["does not announce"]
+  B -- "override on / announce true" --> C{"override with channel?<br/>data/feeds.json"}
+  C -- yes --> CH1["channel of the latest /feed"]
+  C -- no --> D{"guild feeds?<br/>config/guilds.json"}
+  D -- yes --> CH2["feeds[serverId]"]
+  D -- no --> E{"guild feedChannelId?"}
+  E -- yes --> CH3["feedChannelId"]
+  E -- no --> NO2["does not announce"]
 ```
 
-Regla corta: **lo que hiciste con `/feed` manda sobre el archivo**, y el archivo manda sobre el
-default. Por eso `/feed <server> off` silencia aunque la config diga lo contrario, y `on` apunta al
-canal donde lo escribiste.
+Short rule: **what you did with `/feed` beats the file**, and the file beats the default. That's why `/feed <server> off` silences even when the config says the opposite, and `on` points to the channel where you ran it.
 
 ## `data/feeds.json`
 
-Lo escribe `/feed`; no lo edites a mano salvo emergencia.
+Written by `/feed`; don't edit it by hand except in an emergency.
 
 ```json
 {
-  "1408342037538799616:8": { "on": true, "channelId": "1554590063541620897" },
-  "1408342037538799616:2": { "on": false }
+  "123456789012345678:8": { "on": true, "channelId": "234567890123456789" },
+  "123456789012345678:2": { "on": false }
 }
 ```
 
-Clave `"<guildId>:<serverId>"`. Para revertir a lo que dice la config, borra la clave y reinicia
-(o reinicia y usa `/feed` de nuevo).
+Key `"<guildId>:<serverId>"`. To revert to what the config says, delete the key and restart (or restart and use `/feed` again).
 
 ## `data/autostop.json`
 
-Lo escribe `/autostop`; clave = **id del servidor** (no por Discord: el servidor es uno solo y dos
-guilds con umbrales distintos se pisarían).
+Written by `/autostop`; key = **server id** (not per Discord: the server is a single one and two guilds with different thresholds would overwrite each other).
 
 ```json
 { "8": { "hours": 2, "warnMinutes": 15 } }
 ```
 
-Precedencia: override de Discord → `config/servers.json` → desactivado. `/autostop <server> hours:0`
-borra la clave (si la config lo activa, vuelve a aplicar). Detalles en [autostop.md](autostop.md).
+Precedence: Discord override → `config/servers.json` → disabled. `/autostop <server> hours:0` deletes the key (if the config enables it, it applies again). Details in [autostop.md](autostop.md).
 
 ## `data/state.json`
 
 ```json
 {
-  "servers": { "8": { "players": ["neyzer"], "initialized": true, "unknown": false } },
-  "feeds": { "1408342037538799616:8": { "initialized": true } }
+  "servers": { "8": { "players": ["alice"], "initialized": true, "unknown": false } },
+  "feeds": { "123456789012345678:8": { "initialized": true } }
 }
 ```
 
-| Campo | Significado |
+| Field | Meaning |
 |---|---|
-| `players` | Última lista de jugadores vista |
-| `initialized` | Ya se hizo el baseline (la primera lectura no anuncia) |
-| `unknown` | El último sondeo falló: se calla y no se inventan salidas |
-| `feeds["<guild>:<id>"].initialized` | Esa suscripción ya arrancó en silencio |
+| `players` | Last seen player list |
+| `initialized` | Baseline already done (the first read doesn't announce) |
+| `unknown` | The last poll failed: it stays quiet and doesn't invent departures |
+| `feeds["<guild>:<id>"].initialized` | That subscription already started silently |
 
-Borrar el archivo es seguro: el watcher lo recrea y hace baseline (se pierde el "quién estaba
-dentro" pero **no** la configuración).
+Deleting the file is safe: the watcher recreates it and does a baseline (you lose the "who was inside" but **not** the configuration).
 
-## Aplicar cambios
+## Applying changes
 
-| Cambio | Cómo se aplica |
+| Change | How it applies |
 |---|---|
-| `data/feeds.json` | Inmediato (lo escribe `/feed` y lo recarga en memoria) |
-| `config/guilds.json` o `config/servers.json` | Reiniciar el contenedor: `docker compose restart` (la config se lee una vez y se cachea) |
-| `.env` | `docker compose up -d` (recrea con las nuevas variables) |
-| Comandos (`src/commands/`) | `npm run deploy` (registro global) + `docker compose up -d --build` |
+| `data/feeds.json` | Immediate (written by `/feed` and reloaded in memory) |
+| `config/guilds.json` or `config/servers.json` | Restart the container: `docker compose restart` (config is read once and cached) |
+| `.env` | `docker compose up -d` (recreates with the new variables) |
+| Commands (`src/commands/`) | `npm run deploy` (global registration) + `docker compose up -d --build` |
 
-> `src/config.js` expone `reloadConfig()`, pero ningún camino de runtime lo llama: la recarga en
-> caliente quedó fuera de alcance a propósito (reiniciar es un segundo y evita estados a medias).
+> `src/config.js` exposes `reloadConfig()`, but no runtime path calls it: hot reload was left out of scope on purpose (restarting takes a second and avoids half-applied states).

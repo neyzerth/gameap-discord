@@ -1,0 +1,22 @@
+# Local, gitignored list of patterns that must never be published.
+#
+# Copy this file to `.docs-leaks` and fill it in:
+#
+#   cp .docs-leaks.example .docs-leaks
+#
+# One regular expression per line, written WITHOUT slashes (they are compiled
+# with `new RegExp(line, 'i')`, so matching is case-insensitive). Blank lines and
+# lines starting with '#' are ignored. `npm run check:docs` reports every line of
+# every documented file that matches one of them, and never prints the pattern.
+#
+# Typical entries for a self-hosted Discord bot:
+#   - Discord ids: guild id, feed channel id, ids used in tests
+#   - host paths: the stack directory, storage mounts, backup targets
+#   - the real server aliases and labels used by your game servers
+#   - real usernames that appear in examples or fixtures
+#
+# Examples (uncomment and adapt):
+#   ^[0-9]{18,19}$
+#   /opt/my-stack
+#   /mnt/my-storage
+#   my-minecraft-alias

@@ -14,7 +14,7 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  examples: ['/players ludopatia', '/players 8'],
+  examples: ['/players mc-survival', '/players 8'],
   notes:
     'If the server is stopped it answers "RCON unavailable: the server is stopped" instead of an error; same if the game cannot list players (like some modded setups).',
 };

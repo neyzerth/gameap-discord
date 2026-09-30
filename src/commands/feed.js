@@ -21,7 +21,7 @@ export const data = new SlashCommandBuilder()
 export const autocomplete = autocompleteServers;
 
 export const help = {
-  examples: ['/feed ludopatia on', '/feed ludopatia off'],
+  examples: ['/feed mc-survival on', '/feed mc-survival off'],
   notes:
     'It applies to the channel where you run it, not to the whole server. New subscriptions start silent: the next message comes with the next real join or leave, not with the people already inside.',
 };

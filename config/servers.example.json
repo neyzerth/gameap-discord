@@ -1,0 +1,29 @@
+{
+  "2": {
+    "alias": "creative",
+    "label": "Creative",
+    "emoji": "🧱"
+  },
+  "4": {
+    "alias": "skyblock",
+    "label": "SkyBlock",
+    "emoji": "☁️"
+  },
+  "5": {
+    "alias": "minigames",
+    "label": "Minigames",
+    "emoji": "🎉"
+  },
+  "7": {
+    "alias": "ttt",
+    "label": "Trouble in Terrorist Town",
+    "emoji": "🔧"
+  },
+  "8": {
+    "alias": "mc-survival",
+    "label": "MC Survival",
+    "emoji": "🎲",
+    "announce": true,
+    "autoStop": { "hours": 2, "warnMinutes": 15 }
+  }
+}

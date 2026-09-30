@@ -27,7 +27,7 @@ test('usage strings are built from the command options', () => {
 });
 
 test('general help lists every command and the feed section', () => {
-  const embed = generalEmbed(commands, '1541489406920360017').toJSON();
+  const embed = generalEmbed(commands, '345678901234567890').toJSON();
   const text = [embed.description, ...embed.fields.map((f) => `${f.name}\n${f.value}`)].join('\n');
   for (const name of commands.keys()) {
     assert.ok(text.includes(`/${name}`), `general help does not mention /${name}`);
