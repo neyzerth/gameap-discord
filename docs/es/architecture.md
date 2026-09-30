@@ -9,13 +9,14 @@ flowchart TB
   subgraph PROC["Un solo proceso Node (contenedor gameap-bot)"]
     IDX["src/index.js<br/>cliente discord.js"]
     REG["src/registry.js<br/>carga de comandos"]
-    CMD["src/commands/*.js<br/>9 comandos"]
+    CMD["src/commands/*.js<br/>11 comandos"]
     CTRL["src/control.js<br/>guards + confirmación + seguimiento"]
     WATCH["src/watcher.js<br/>ciclo de polling"]
     CFG["src/config.js<br/>guilds + servidores"]
     STATE["src/state.js<br/>state.json y feeds.json"]
     GA["src/gameap.js<br/>cliente de la API del panel"]
     EMB["src/embeds.js<br/>embeds y fan-out"]
+    I18N["src/i18n<br/>catálogos + t()"]
   end
 
   PANEL["panel GameAP :8025"]
@@ -28,8 +29,10 @@ flowchart TB
   CTRL --> GA
   WATCH --> GA
   WATCH --> EMB
-  EMB --> DISC
   CMD --> EMB
+  CMD --> I18N
+  EMB --> I18N
+  EMB --> DISC
   IDX --> DISC
   CFG --> FILES
   STATE --> FILES
@@ -43,6 +46,7 @@ Responsabilidades, en una línea cada una:
 | `src/index.js` | Login, carga de comandos, router de interacciones, arranque del watcher, `guildCreate` |
 | `src/registry.js` | Única fuente de la lista de comandos (la usan el bot, el deploy y `/help`) |
 | `src/commands/*.js` | Un comando por archivo: `data` (definición), `help`, `execute`, opcional `autocomplete` |
+| `src/commands/language.js` | `/language`: muestra o cambia el idioma de este guild (`data/locale.json`; `auto` lo borra), solo operadores |
 | `src/control.js` | Lógica compartida de `/start`, `/stop`, `/restart`: guard, resolución del servidor, confirmación, seguimiento |
 | `src/permissions.js` | `isOperator()` según `operatorRoleIds` del guild |
 | `src/config.js` | Resolución multi-guild: alias, servidores visibles, canal de feed, overrides de runtime |
@@ -51,8 +55,14 @@ Responsabilidades, en una línea cada una:
 | `src/autostop.js` | Lógica **pura** del auto-apagado: resolver config, acumular inactividad, evaluar warn/stop |
 | `src/state.js` | Persistencia en disco y `diff()` puro entre dos listas de jugadores |
 | `src/embeds.js` | Construcción de embeds y envío a los canales del feed |
+| `src/i18n/` | Catálogos de idiomas (`locales/*.json`) y la API de traducción: `t()`, `plural()`, resolución por guild, localizaciones de Discord |
 | `src/help.js` | Ayuda general y por comando, generada desde los comandos vivos |
 | `src/logger.js` | Log con niveles (`LOG_LEVEL`), sin secretos |
+
+Todo el texto que ve el usuario está localizado y el idioma es **por guild de Discord**: primero el
+override de `/language` (`data/locale.json`), luego la entrada del guild en `guilds.json`, luego los
+`defaults`, luego `DEFAULT_LOCALE` y finalmente inglés. Los embeds se construyen con el idioma del
+guild al que van, así el fan-out del feed habla el idioma de cada Discord — nunca una config global.
 
 ## Flujo de un comando de control (`/stop`)
 

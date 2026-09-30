@@ -22,10 +22,10 @@ cp .env.example .env && chmod 600 .env     # y rellenar DISCORD_TOKEN + GAMEAP_T
 cp config/servers.example.json config/servers.json    # y editar alias/label/ids reales
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 19 tests, deben pasar antes de desplegar
+npm test                                   # 77 tests, deben pasar antes de desplegar
 npm run deploy                             # registra los comandos GLOBALES
 docker compose up -d --build
-docker logs -f gameap-bot                  # "loaded 9 commands" + "logged in as ... — N guild(s)"
+docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
 
 Detalles del `compose.yaml` que no son cosméticos:
@@ -189,19 +189,21 @@ Los uuid: `ls /etc/systemd/system | grep 'gameap-server-.*\.socket$'`.
 ## Respaldos
 
 Lo que vale la pena respaldar: `config/` (catálogo y guilds) y, opcionalmente, `data/` (estado del
-feed). El `.env` va aparte, cifrado, porque tiene los secretos.
+feed y overrides de `/language`). El `.env` va aparte, cifrado, porque tiene los secretos.
 
 ```bash
 tar czf /var/backups/gameap-bot-config-$(date +%F).tar.gz -C /opt/gameap-discord-bot config .env
 ```
 
-`data/state.json` y `data/feeds.json` son desechables: se recrean y solo provocan un baseline
-silencioso.
+`data/state.json`, `data/feeds.json` y `data/locale.json` son desechables: se recrean, y borrarlos
+solo cuesta un baseline silencioso (state) o los overrides de runtime (`/feed`, `/language`).
+`data/locale.json` en particular es seguro de borrar: cada guild vuelve a su idioma configurado
+(`guilds.json` → `DEFAULT_LOCALE` → `en`).
 
 ## Checklist después de cualquier cambio
 
-- [ ] `npm test` en verde (19 tests)
-- [ ] `docker logs --tail 10` sin `ERROR`, con `loaded 9 commands` y `— N guild(s)`
+- [ ] `npm test` en verde (77 tests)
+- [ ] `docker logs --tail 10` sin `ERROR`, con `loaded 11 commands` y `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` en 0
 - [ ] Un comando real probado (`/servers` y `/players <server>`)
 - [ ] Si tocaste el feed: inyectar un jugador ficticio y ver el aviso en el canal correcto

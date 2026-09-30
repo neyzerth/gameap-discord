@@ -22,10 +22,10 @@ cp .env.example .env && chmod 600 .env     # and fill in DISCORD_TOKEN + GAMEAP_
 cp config/servers.example.json config/servers.json    # and edit the real alias/label/ids
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 19 tests, must pass before deploying
+npm test                                   # 77 tests, must pass before deploying
 npm run deploy                             # registers the GLOBAL commands
 docker compose up -d --build
-docker logs -f gameap-bot                  # "loaded 9 commands" + "logged in as ... — N guild(s)"
+docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
 
 Details in the `compose.yaml` that are not cosmetic:
@@ -189,20 +189,22 @@ The uuids: `ls /etc/systemd/system | grep 'gameap-server-.*\\.socket$'`.
 
 ## Backups
 
-What's worth backing up: `config/` (catalog and guilds) and, optionally, `data/` (feed state).
-`.env` goes separately, encrypted, because it holds the secrets.
+What's worth backing up: `config/` (catalog and guilds) and, optionally, `data/` (feed state and
+`/language` overrides). `.env` goes separately, encrypted, because it holds the secrets.
 
 ```bash
 tar czf /var/backups/gameap-bot-config-$(date +%F).tar.gz -C /opt/gameap-discord-bot config .env
 ```
 
-`data/state.json` and `data/feeds.json` are disposable: they get recreated and only trigger a
-quiet baseline.
+`data/state.json`, `data/feeds.json` and `data/locale.json` are disposable: they get recreated,
+and deleting them only costs a quiet baseline (state) or the runtime overrides (`/feed`,
+`/language`). `data/locale.json` in particular is safe to delete: every guild falls back to its
+configured locale (`guilds.json` → `DEFAULT_LOCALE` → `en`).
 
 ## Checklist after any change
 
-- [ ] `npm test` green (19 tests)
-- [ ] `docker logs --tail 10` without `ERROR`, with `loaded 9 commands` and `— N guild(s)`
+- [ ] `npm test` green (77 tests)
+- [ ] `docker logs --tail 10` without `ERROR`, with `loaded 11 commands` and `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` at 0
 - [ ] A real command tested (`/servers` and `/players <server>`)
 - [ ] If you touched the feed: inject a fake player and see the notice in the right channel

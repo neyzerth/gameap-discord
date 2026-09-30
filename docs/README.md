@@ -47,13 +47,14 @@ flowchart LR
 | Document | Read it to learn… |
 |---|---|
 | [architecture.md](architecture.md) | How the pieces connect, the flow of a command and of the watcher, and **why** each design decision was made |
-| [commands.md](commands.md) | The 10 commands: options, permissions, which embed they return and which errors they can raise |
+| [commands.md](commands.md) | The 11 commands: options, permissions, which embed they return and which errors they can raise |
 | [configuration.md](configuration.md) | Environment variables and the config/state JSON files, with the exact feed precedence |
 | [feed.md](feed.md) | How the watcher detects joins/leaves and how it avoids false announcements |
 | [autostop.md](autostop.md) | The idle auto-stop (2 h with no players), how to configure it and how to test it safely |
 | [gameap-api.md](gameap-api.md) | Panel endpoints the bot uses, the PAT abilities it needs and its error handling |
 | [operations.md](operations.md) | Deploy, update, rotate credentials, step-by-step troubleshooting |
 | [development.md](development.md) | Code map, how to add a command, how to run the tests |
+| [i18n.md](i18n.md) | Locale catalogs, per-guild language resolution, how to add a language |
 
 ## Data model (config vs state)
 

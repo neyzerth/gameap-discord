@@ -9,13 +9,14 @@ flowchart TB
   subgraph PROC["One Node process (gameap-bot container)"]
     IDX["src/index.js<br/>discord.js client"]
     REG["src/registry.js<br/>command loading"]
-    CMD["src/commands/*.js<br/>9 commands"]
+    CMD["src/commands/*.js<br/>11 commands"]
     CTRL["src/control.js<br/>guards + confirmation + tracking"]
     WATCH["src/watcher.js<br/>polling loop"]
     CFG["src/config.js<br/>guilds + game servers"]
     STATE["src/state.js<br/>state.json and feeds.json"]
     GA["src/gameap.js<br/>panel API client"]
     EMB["src/embeds.js<br/>embeds and fan-out"]
+    I18N["src/i18n<br/>catalogs + t()"]
   end
 
   PANEL["GameAP panel :8025"]
@@ -28,8 +29,10 @@ flowchart TB
   CTRL --> GA
   WATCH --> GA
   WATCH --> EMB
-  EMB --> DISC
   CMD --> EMB
+  CMD --> I18N
+  EMB --> I18N
+  EMB --> DISC
   IDX --> DISC
   CFG --> FILES
   STATE --> FILES
@@ -43,6 +46,7 @@ Responsibilities, one line each:
 | `src/index.js` | Login, command loading, interaction router, watcher startup, `guildCreate` |
 | `src/registry.js` | Single source of the command list (used by the bot, the deploy and `/help`) |
 | `src/commands/*.js` | One command per file: `data` (definition), `help`, `execute`, optional `autocomplete` |
+| `src/commands/language.js` | `/language`: shows or overrides this guild's locale (`data/locale.json`; `auto` clears it), operators only |
 | `src/control.js` | Shared `/start`, `/stop`, `/restart` logic: guard, game server resolution, confirmation, tracking |
 | `src/permissions.js` | `isOperator()` based on the guild's `operatorRoleIds` |
 | `src/config.js` | Multi-guild resolution: aliases, visible game servers, feed channel, runtime overrides |
@@ -51,8 +55,14 @@ Responsibilities, one line each:
 | `src/autostop.js` | **Pure** auto-stop logic: resolve config, accumulate inactivity, evaluate warn/stop |
 | `src/state.js` | Disk persistence and a pure `diff()` between two player lists |
 | `src/embeds.js` | Embed construction and delivery to the feed channels |
+| `src/i18n/` | Locale catalogs (`locales/*.json`) and the translation API: `t()`, `plural()`, per-guild resolution, Discord localizations |
 | `src/help.js` | General and per-command help, generated from the live commands |
 | `src/logger.js` | Log with levels (`LOG_LEVEL`), no secrets |
+
+All user-facing text is localized and the language is **per Discord guild**: the `/language`
+override (`data/locale.json`) wins, then the guild's entry in `guilds.json`, then `defaults`, then
+`DEFAULT_LOCALE`, then English. Embeds are built with the locale of the guild they are sent to, so
+the feed fan-out speaks each Discord's language — never one global config.
 
 ## Control command flow (`/stop`)
 

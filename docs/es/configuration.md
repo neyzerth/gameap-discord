@@ -2,8 +2,7 @@
 
 # Configuración
 
-Cuatro archivos JSON de configuración/estado, un `.env` y un quinto JSON para los overrides del
-auto-apagado. Dentro de `config/`, el repo solo versiona las **plantillas** `*.example.json`: los
+Seis archivos JSON de configuración/estado y un `.env`. Dentro de `config/`, el repo solo versiona las **plantillas** `*.example.json`: los
 `config/servers.json` y `config/guilds.json` reales son locales (están en `.gitignore`) porque llevan
 los ids de tus guilds, canales y servidores. Los `data/*.json` son **estado en runtime** y se pueden
 borrar sin perder configuración.
@@ -16,6 +15,7 @@ config/guilds.json    por Discord: canal de feed, roles operadores, servidores v
 data/state.json       watcher: jugadores conocidos, reloj de inactividad y suscripciones
 data/feeds.json       overrides de /feed (on/off y canal)
 data/autostop.json    overrides de /autostop (por servidor)
+data/locale.json      overrides de /language (por guild)
 ```
 
 Primera vez (o clon nuevo):
@@ -34,12 +34,14 @@ cp config/guilds.example.json  config/guilds.json    # y editar alias/label/ids 
 | `GAMEAP_API_URL` | `http://127.0.0.1:8025` | Base de la API del panel |
 | `POLL_INTERVAL_MS` | `20000` | Intervalo del watcher (20 s) |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn`, `error` |
+| `DEFAULT_LOCALE` | `en` | Idioma base: `en` o `es-MX` (vacío = `en`) |
 | `AUTOSTOP_DRY_RUN` | `false` | `true` = el auto-apagado solo loguea y anuncia lo que haría, **no** apaga (ojo: se lee al crear el contenedor, hace falta `docker compose up -d`) |
 | `AUTOSTOP_FILE` | `./data/autostop.json` | Overrides de `/autostop` |
 | `SERVERS_FILE` | `./config/servers.json` | Catálogo |
 | `GUILDS_FILE` | `./config/guilds.json` | Config por guild |
 | `STATE_FILE` | `./data/state.json` | Estado del watcher |
 | `FEEDS_STATE_FILE` | `./data/feeds.json` | Overrides de `/feed` |
+| `LOCALES_STATE_FILE` | `./data/locale.json` | Overrides de `/language` |
 | `DISCORD_APP_ID` | — | Solo informativo: `deploy-commands.js` resuelve el id desde el token |
 
 `DISCORD_GUILD_ID` **no** lo usa el código. Antes servía de fallback para el registro por guild y
@@ -75,13 +77,14 @@ autocompletado, y no se pueden usar en ningún comando).
 
 ```json
 {
-  "defaults": { "operatorRoleIds": [], "feedChannelId": null, "servers": null },
+  "defaults": { "operatorRoleIds": [], "feedChannelId": null, "servers": null, "locale": null },
   "guilds": {
     "123456789012345678": {
       "feedChannelId": "234567890123456789",
       "operatorRoleIds": [],
       "servers": ["8"],
-      "feeds": { "8": "234567890123456789" }
+      "feeds": { "8": "234567890123456789" },
+      "locale": "es-MX"
     },
     "345678901234567890": { "operatorRoleIds": [], "servers": null }
   }
@@ -94,12 +97,33 @@ autocompletado, y no se pueden usar en ningún comando).
 | `servers` | `null` | `null` → ve todos los de `servers.json`. Con lista → solo esos ids |
 | `feedChannelId` | `null` | Canal por defecto del feed para ese guild |
 | `feeds` | `{}` | Canal específico por servidor: `{ "<serverId>": "<channelId>" }` |
+| `locale` | `null` | Idioma de este guild: `en`, `es-MX` o cualquier tag BCP-47 (una variante regional como `es-AR` la sirve el catálogo de su idioma, `es-MX`). `null` → hereda `defaults.locale` (ver [Resolución del idioma](#resolución-del-idioma)) |
 
 `defaults` se aplica a los guilds que no declaran el campo: así un guild nuevo hereda "todos los
 servidores, sin operadores restringidos, sin feed" y se ajusta después.
 
 Un guild que **no** está en el archivo igual puede usar los comandos (con los defaults), pero no
 tiene feed hasta que se configure o alguien use `/feed <server> on`.
+
+## Resolución del idioma
+
+El bot resuelve **un idioma por guild**, tomando el primer candidato de esta cadena que corresponda
+a un catálogo:
+
+1. Override de `/language` para ese guild, guardado en `data/locale.json` (no versionado).
+2. `guilds["<GUILD_ID>"].locale` en `config/guilds.json`.
+3. `defaults.locale` en `config/guilds.json`.
+4. `DEFAULT_LOCALE` del `.env`.
+5. Idioma base: `en`.
+
+Un valor sin catálogo se ignora y la resolución pasa al siguiente candidato — y una variante
+regional (`es-AR`, `es-419`) la sirve el catálogo de su idioma (`es-MX`). El idioma afecta todo lo
+que el bot escribe en Discord; **los nombres de los comandos siguen en inglés** y los logs de
+consola también.
+
+`/language` sin argumento muestra el idioma efectivo y de dónde sale. `/language locale:es-MX`
+guarda un override para este guild en `data/locale.json`; `/language locale:auto` lo borra, así la
+siguiente resolución vuelve a la cadena de la config.
 
 ## Precedencia del canal de feed
 
@@ -168,11 +192,24 @@ borra la clave (si la config lo activa, vuelve a aplicar). Detalles en [autostop
 Borrar el archivo es seguro: el watcher lo recrea y hace baseline (se pierde el "quién estaba
 dentro" pero **no** la configuración).
 
+## `data/locale.json`
+
+Lo escribe `/language`; clave = **id del guild**, valor = el tag de idioma (`es-MX`).
+
+```json
+{ "123456789012345678": "es-MX" }
+```
+
+Estado en runtime igual que los otros overrides: borra el archivo (o una sola clave) y no se rompe
+nada — el guild vuelve a la cadena configurada (`guilds.json` → `DEFAULT_LOCALE` → `en`). No se
+versiona (todo `data/` es local) y se puede borrar sin perder configuración.
+
 ## Aplicar cambios
 
 | Cambio | Cómo se aplica |
 |---|---|
 | `data/feeds.json` | Inmediato (lo escribe `/feed` y lo recarga en memoria) |
+| `data/locale.json` | Inmediato (lo escribe `/language` y lo recarga en memoria) |
 | `config/guilds.json` o `config/servers.json` | Reiniciar el contenedor: `docker compose restart` (la config se lee una vez y se cachea) |
 | `.env` | `docker compose up -d` (recrea con las nuevas variables) |
 | Comandos (`src/commands/`) | `npm run deploy` (registro global) + `docker compose up -d --build` |

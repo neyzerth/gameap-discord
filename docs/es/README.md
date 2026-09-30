@@ -45,13 +45,14 @@ flowchart LR
 | Documento | Léelo si quieres saber… |
 |---|---|
 | [architecture.md](architecture.md) | Cómo se conectan las piezas, flujo de un comando y del watcher, y **por qué** cada decisión de diseño |
-| [commands.md](commands.md) | Los 10 comandos: opciones, permisos, qué embed devuelven y qué errores pueden dar |
+| [commands.md](commands.md) | Los 11 comandos: opciones, permisos, qué embed devuelven y qué errores pueden dar |
 | [configuration.md](configuration.md) | Variables de entorno y los JSON de config/estado, con la precedencia exacta del feed |
 | [feed.md](feed.md) | Cómo detecta el watcher las entradas/salidas y cómo evita avisos falsos |
 | [autostop.md](autostop.md) | El auto-apagado por inactividad (2 h sin jugadores), cómo configurarlo y cómo probarlo |
 | [gameap-api.md](gameap-api.md) | Endpoints del panel que usa el bot, permisos del PAT y manejo de errores |
 | [operations.md](operations.md) | Desplegar, actualizar, rotar credenciales, troubleshooting paso a paso |
 | [development.md](development.md) | Mapa del código, cómo agregar un comando, cómo correr los tests |
+| [i18n.md](i18n.md) | Catálogos de idiomas, resolución del idioma por guild, cómo agregar un idioma |
 
 ## Modelo de datos (config vs estado)
 

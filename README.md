@@ -10,7 +10,7 @@ restart them, run RCON commands, and get a message in a channel every time a pla
 ![discord.js v14](https://img.shields.io/badge/discord.js-v14-5865F2.svg?logo=discord&logoColor=white)
 
 - **Slash commands** — `/servers`, `/status`, `/start`, `/stop`, `/restart`, `/players`, `/rcon`,
-  `/feed`, `/autostop`, `/help`.
+  `/feed`, `/autostop`, `/help`, `/language`.
 - **RCON through the panel** — the bot only speaks the panel's HTTP API, so it never opens a game
   port and the firewall can stay closed.
 - **Player feed** — a poller announces joins and leaves in the channel you choose, with rules that
@@ -68,10 +68,19 @@ twice in some clients. Only the `*.example.json` templates are in git — your r
 | `/feed <server> on\|off` | Subscribe this channel to the join/leave announcements |
 | `/autostop <server> [hours] [warn]` | Shut the server down on its own after N hours with nobody playing (2 h by default; `hours:0` disables it) |
 | `/help [command]` | Overview, or details and examples for one command |
+| `/language [locale]` | Show this guild's language or change it (`en`, `es-MX`; `auto` goes back to the config) |
 
 `<server>` accepts the panel id or the alias from `config/servers.json` (e.g. `/start mc-survival`).
 `/help` is generated from the commands the bot actually loaded, and a test fails if a command ships
 without help text.
+
+## Languages
+
+The bot ships with **English** as its base language and **Mexican Spanish** (`es-MX`). The language
+is **per guild**: `/language` stores an override in `data/locale.json`, falling back to the guild's
+`guilds.json` entry, `defaults`, `DEFAULT_LOCALE` and finally English; `/language locale:auto`
+clears the override. Adding a language is a JSON catalog plus a deploy — see
+[docs/i18n.md](docs/i18n.md).
 
 ## Documentation
 
@@ -81,13 +90,14 @@ Full docs live in [`docs/`](docs/README.md) (English, the source of truth) and a
 | Document | Read it to learn… |
 |---|---|
 | [architecture.md](docs/architecture.md) | How the pieces connect and why each decision was made |
-| [commands.md](docs/commands.md) | The 10 commands and their errors |
+| [commands.md](docs/commands.md) | The 11 commands and their errors |
 | [configuration.md](docs/configuration.md) | `.env`, the JSON files and the feed precedence |
 | [feed.md](docs/feed.md) | The watcher and its anti-spam rules |
 | [autostop.md](docs/autostop.md) | Idle auto-shutdown (`/autostop`) and dry-run mode |
 | [gameap-api.md](docs/gameap-api.md) | Panel endpoints and PAT abilities |
 | [operations.md](docs/operations.md) | Deploy, rotate credentials, troubleshooting |
 | [development.md](docs/development.md) | Code map, tests, adding a command |
+| [i18n.md](docs/i18n.md) | Locale catalogs, per-guild language resolution, adding a language |
 
 ```bash
 npm test            # unit tests
