@@ -1,0 +1,5 @@
+{
+  "errors": {
+    "commandFailed": "El comando falló: {message}"
+  }
+}
