@@ -69,7 +69,7 @@ madurar.
 | `/autostop mc-survival hours:2 warn:0` | Igual, pero **sin** mensaje de aviso previo |
 | `/autostop mc-survival hours:0` | **Desactiva** el auto-apagado |
 
-- Solo **operadores** (con `operatorRoleIds: []` = todos, como el resto del bot).
+- Solo **operadores** (con `operatorRoleIds: []` = todos, como el resto del bot; `commandRoles.autostop` puede darle sus propios roles).
 - El ajuste se guarda en `data/autostop.json` y se aplica **al instante**, sin reiniciar el bot.
 - Límites: `hours` 0-168, `warn` 0-120.
 

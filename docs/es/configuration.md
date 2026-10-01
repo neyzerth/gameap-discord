@@ -11,7 +11,7 @@ borrar sin perder configuración.
 compose.yaml          contenedor (host network, user 1000, mounts)
 .env                  secretos: DISCORD_TOKEN, GAMEAP_TOKEN (chmod 600, nunca al repo)
 config/servers.json   catálogo de game servers: alias, label, emoji, announce, autoStop
-config/guilds.json    por Discord: canal de feed, roles operadores, servidores visibles
+config/guilds.json    por Discord: canal de feed, roles operadores (por comando), servidores visibles
 data/state.json       watcher: jugadores conocidos, reloj de inactividad y suscripciones
 data/feeds.json       overrides de /feed (on/off y canal)
 data/autostop.json    overrides de /autostop (por servidor)
@@ -77,11 +77,12 @@ autocompletado, y no se pueden usar en ningún comando).
 
 ```json
 {
-  "defaults": { "operatorRoleIds": [], "feedChannelId": null, "servers": null, "locale": null },
+  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "feedChannelId": null, "servers": null, "locale": null },
   "guilds": {
     "123456789012345678": {
       "feedChannelId": "234567890123456789",
-      "operatorRoleIds": [],
+      "operatorRoleIds": ["456789012345678901"],
+      "commandRoles": { "rcon": ["567890123456789012"] },
       "servers": ["8"],
       "feeds": { "8": "234567890123456789" },
       "locale": "es-MX"
@@ -93,14 +94,21 @@ autocompletado, y no se pueden usar en ningún comando).
 
 | Campo | Default | Efecto |
 |---|---|---|
-| `operatorRoleIds` | `[]` | `[]` → **cualquiera** puede usar los comandos de control (setup actual de amigos de confianza). Con ids → solo quien tenga uno de esos roles |
+| `operatorRoleIds` | `[]` | `[]` → **cualquiera** puede usar los comandos de control, salvo que `commandRoles` restrinja alguno (setup actual de amigos de confianza). Con ids → solo quien tenga uno de esos roles |
+| `commandRoles` | `{}` | Roles **por comando**: `{ "<comando>": ["<id rol>"] }`. **Reemplaza** a `operatorRoleIds` en ese comando (puede ser más chico o más amplio). Una lista vacía significa "no definido" y hereda `operatorRoleIds` |
 | `servers` | `null` | `null` → ve todos los de `servers.json`. Con lista → solo esos ids |
 | `feedChannelId` | `null` | Canal por defecto del feed para ese guild |
 | `feeds` | `{}` | Canal específico por servidor: `{ "<serverId>": "<channelId>" }` |
 | `locale` | `null` | Idioma de este guild: `en`, `es-MX` o cualquier tag BCP-47 (una variante regional como `es-AR` la sirve el catálogo de su idioma, `es-MX`). `null` → hereda `defaults.locale` (ver [Resolución del idioma](#resolución-del-idioma)) |
 
 `defaults` se aplica a los guilds que no declaran el campo: así un guild nuevo hereda "todos los
-servidores, sin operadores restringidos, sin feed" y se ajusta después.
+servidores, sin operadores restringidos, sin feed" y se ajusta después. `commandRoles` hereda igual
+y **por comando**: `defaults.commandRoles.rcon` se aplica a un guild que no declara su propio `rcon`.
+
+El gate de roles se resuelve **por comando** (`src/permissions.js`): `commandRoles.<comando>` →
+`operatorRoleIds` → **todos**. Una lista vacía significa "no definido" (hereda el siguiente nivel) y
+`commandRoles.<comando>` **reemplaza** la lista de operadores para ese comando en lugar de
+intersectarse con ella. Detalle en [commands.md](commands.md).
 
 Un guild que **no** está en el archivo igual puede usar los comandos (con los defaults), pero no
 tiene feed hasta que se configure o alguien use `/feed <server> on`.

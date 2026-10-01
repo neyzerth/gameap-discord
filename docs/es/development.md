@@ -21,7 +21,7 @@ src/
   index.js           cliente discord.js, router de interacciones, guildCreate, shutdown
   registry.js        carga de src/commands/*.js + usageOf() para la ayuda
   config.js          resolución multi-guild (alias, visibilidad, feed, overrides)
-  permissions.js     isOperator() según operatorRoleIds
+  permissions.js     isOperator(member, comando) desde commandRoles / operatorRoleIds
   gameap.js          cliente HTTP del panel (timeout 15 s)
   watcher.js         ciclo de polling y decisión de anunciar
   autostop.js        reloj de inactividad puro (resolveAutoStop, accumulateIdle, evaluateIdle)

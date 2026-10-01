@@ -12,7 +12,7 @@ deleted without losing configuration.
 compose.yaml          container (host network, user 1000, mounts)
 .env                  secrets: DISCORD_TOKEN, GAMEAP_TOKEN (chmod 600, never in the repo)
 config/servers.json   game server catalog: alias, label, emoji, announce, autoStop
-config/guilds.json    per Discord: feed channel, operator roles, visible servers
+config/guilds.json    per Discord: feed channel, operator roles (per command), visible servers
 data/state.json       watcher: known players, inactivity clock and subscriptions
 data/feeds.json       /feed overrides (on/off and channel)
 data/autostop.json    /autostop overrides (per server)
@@ -74,11 +74,12 @@ Servers outside this file **do not exist** for the bot (they don't show up in `/
 
 ```json
 {
-  "defaults": { "operatorRoleIds": [], "feedChannelId": null, "servers": null, "locale": null },
+  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "feedChannelId": null, "servers": null, "locale": null },
   "guilds": {
     "123456789012345678": {
       "feedChannelId": "234567890123456789",
-      "operatorRoleIds": [],
+      "operatorRoleIds": ["456789012345678901"],
+      "commandRoles": { "rcon": ["567890123456789012"] },
       "servers": ["8"],
       "feeds": { "8": "234567890123456789" },
       "locale": "es-MX"
@@ -90,13 +91,16 @@ Servers outside this file **do not exist** for the bot (they don't show up in `/
 
 | Field | Default | Effect |
 |---|---|---|
-| `operatorRoleIds` | `[]` | `[]` → **anyone** can use the control commands (current setup: trusted friends). With ids → only those holding one of those roles |
+| `operatorRoleIds` | `[]` | `[]` → **anyone** can use the control commands, unless `commandRoles` narrows one (current setup: trusted friends). With ids → only those holding one of those roles |
+| `commandRoles` | `{}` | Roles **per command**: `{ "<command>": ["<role id>"] }`. It **replaces** `operatorRoleIds` for that command (it can be narrower or wider). An empty list means "not set" and inherits `operatorRoleIds` |
 | `servers` | `null` | `null` → sees all from `servers.json`. With a list → only those ids |
 | `feedChannelId` | `null` | Default feed channel for that guild |
 | `feeds` | `{}` | Per-server specific channel: `{ "<serverId>": "<channelId>" }` |
 | `locale` | `null` | Language for this guild: `en`, `es-MX` or any BCP-47 tag (a regional variant like `es-AR` is served by its language catalog, `es-MX`). `null` → inherits `defaults.locale` (see [Locale resolution](#locale-resolution)) |
 
-`defaults` applies to guilds that don't declare the field: a new guild inherits "all servers, no restricted operators, no feed" and is adjusted afterwards.
+`defaults` applies to guilds that don't declare the field: a new guild inherits "all servers, no restricted operators, no feed" and is adjusted afterwards. `commandRoles` inherits the same way and **per command**: `defaults.commandRoles.rcon` applies to a guild that does not declare its own `rcon`.
+
+The role gate is resolved **per command** (`src/permissions.js`): `commandRoles.<command>` → `operatorRoleIds` → **everyone**. An empty list means "not set" (it inherits the next level) and `commandRoles.<command>` **replaces** the operator list for that command instead of intersecting with it. Details in [commands.md](commands.md).
 
 A guild **not** in the file can still use the commands (with the defaults), but has no feed until it is configured or someone uses `/feed <server> on`.
 

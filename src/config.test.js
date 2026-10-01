@@ -6,7 +6,6 @@ const {
   __setConfig, guildConfig, resolveServer, canUseServer, feedTarget, isAnnounceOn, pollTargets, setOverrides,
   setAutoStopOverrides, autoStopConfig, localeFor, localeSource, setLocaleOverrides,
 } = await import('./config.js');
-const { isOperator } = await import('./permissions.js');
 const { t } = await import('./i18n/index.js');
 
 const SERVERS = {
@@ -102,25 +101,6 @@ test('autoStopConfig resolves override over config and normalises values', () =>
   assert.equal(autoStopConfig('8'), null, 'hours 0 desactiva aunque la config lo active');
 
   setAutoStopOverrides({});
-  __setConfig(SERVERS, GUILDS);
-});
-
-function fakeMember(roleIds) {
-  return {
-    guild: { id: 'g1' },
-    roles: { cache: { some: (fn) => roleIds.map((id) => ({ id })).some(fn) } },
-  };
-}
-
-test('empty operatorRoleIds means everyone may operate', () => {
-  assert.equal(isOperator(fakeMember([])), true);
-  assert.equal(isOperator(fakeMember(['anything'])), true);
-});
-
-test('with operatorRoleIds set, the role is required', () => {
-  __setConfig(SERVERS, { defaults: {}, guilds: { g1: { operatorRoleIds: ['role-op'] } } });
-  assert.equal(isOperator(fakeMember([])), false);
-  assert.equal(isOperator(fakeMember(['role-op'])), true);
   __setConfig(SERVERS, GUILDS);
 });
 

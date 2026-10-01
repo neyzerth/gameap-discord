@@ -136,8 +136,11 @@ del panel se debe crear con **solo** las 6 abilities necesarias.
    sin feed):
 
 ```json
-"<GUILD_ID>": { "feedChannelId": "<CHANNEL_ID>", "servers": ["8"], "operatorRoleIds": [] }
+"<GUILD_ID>": { "feedChannelId": "<CHANNEL_ID>", "servers": ["8"], "operatorRoleIds": [], "commandRoles": { "rcon": ["<ROLE_ID>"] } }
 ```
+
+   `operatorRoleIds` (gate completo) y `commandRoles` (por comando) deciden quién puede operar; si no
+   pones ninguno, **cualquiera** de ese guild puede. Ver [configuration.md](configuration.md#configguildsjson).
 
 4. `docker compose restart gameap-bot` y verificar `— 2 guild(s)` en el log.
 5. Prueba real: inyectar un jugador ficticio en `data/state.json` y reiniciar (ver

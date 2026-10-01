@@ -8,7 +8,7 @@ guild donde esté el bot. Todos declaran `setContexts(Guild)`: no funcionan por 
 
 ```mermaid
 flowchart LR
-  I["interacción<br/>/comando"] --> G1{"¿es operador?<br/>operatorRoleIds"}
+  I["interacción<br/>/comando"] --> G1{"¿puede ejecutarlo?<br/>commandRoles / operatorRoleIds"}
   G1 -- no --> E1["efímero: You are not allowed"]
   G1 -- sí --> G2{"¿existe el server?<br/>alias o id"}
   G2 -- no --> E2["efímero: Unknown server"]
@@ -38,7 +38,30 @@ flowchart LR
 solo ofrece los servidores **visibles en ese guild**.
 
 Diferencia práctica: **los comandos de información no piden permiso** (cualquiera del server puede
-mirar), y los de control/servidor sí pasan por `guardOperator()`.
+mirar), y los de control/servidor sí pasan por `guardOperator()` — con el nombre del comando, así
+que cada uno puede tener sus propios roles.
+
+## Quién puede usar qué
+
+Los comandos con guard llaman a `guardOperator(interaction, interaction.commandName)` y
+`src/permissions.js` resuelve los roles **para ese comando**:
+
+1. `commandRoles.<comando>` del guild (lista no vacía) → solo esos roles.
+2. `operatorRoleIds` del guild (lista no vacía) → solo esos roles.
+3. ninguno de los dos → **todos** (el setup actual: amigos de confianza).
+
+Una lista vacía significa "no definido" y hereda el siguiente nivel, así que `"rcon": []` **no** es
+"todos". `commandRoles.<comando>` **reemplaza** la lista de operadores para ese comando (no se
+intersecta con ella): un guild puede dejar que los moderadores usen `/start` y `/stop` mientras
+`/rcon` queda solo para administradores. Las listas **no** se acumulan: enumera todos los comandos
+que ese grupo necesita — lo que no esté listado cae en `operatorRoleIds`.
+
+```json
+"commandRoles": { "start": ["<id rol mod>"], "stop": ["<id rol mod>"], "rcon": ["<id rol admin>"] }
+```
+
+Referencia de campos, herencia desde `defaults` y ejemplo completo:
+[configuration.md](configuration.md#configguildsjson).
 
 ## Información
 
@@ -106,7 +129,8 @@ volver: así no confunde la reactivación con el estado viejo.
 ## `/rcon <server> <command>`
 
 Pasa tu comando tal cual al RCON del servidor. Es potente y sin validación (más allá de rechazar
-saltos de línea y `;`), por eso es de operadores.
+saltos de línea y `;`), por eso es de operadores — y por eso es el comando que más se beneficia de
+tener sus propios `commandRoles.rcon` (un grupo más chico que el resto de los comandos de control).
 
 - Ejemplos: `/rcon mc-survival say Server restarts in 5 minutes`, `/rcon mc-survival list`,
   `/rcon mc-survival whitelist list`.
@@ -191,7 +215,7 @@ La ayuda no está escrita a mano: `src/help.js` la construye desde los comandos 
 
 | Mensaje | Causa |
 |---|---|
-| `You are not allowed to use this command.` | El guild tiene `operatorRoleIds` y no tienes ninguno de esos roles |
+| `You are not allowed to use this command.` | El guild restringe ese comando (`commandRoles[<comando>]` u `operatorRoleIds`) y no tienes ninguno de esos roles |
 | `Unknown server: <valor>` | El alias/id no está en `config/servers.json` |
 | `That server is not available in this Discord server.` | El guild tiene `servers: [...]` y ese id no está en la lista |
 | `Command failed: <mensaje>` | Excepción no controlada (lo añade el router de `index.js`), efímero |

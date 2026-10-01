@@ -16,8 +16,8 @@ restart them, run RCON commands, and get a message in a channel every time a pla
   port and the firewall can stay closed.
 - **Player feed** — a poller announces joins and leaves in the channel you choose, with rules that
   keep false announcements out.
-- **One bot, many servers** — several Discord guilds with their own channels, operator roles and
-  visible game servers, all configured in JSON.
+- **One bot, many servers** — several Discord guilds with their own channels, **per-command** operator
+  roles and visible game servers, all configured in JSON.
 
 ## How it works
 

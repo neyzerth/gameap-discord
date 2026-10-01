@@ -48,7 +48,7 @@ Responsabilidades, en una línea cada una:
 | `src/commands/*.js` | Un comando por archivo: `data` (definición), `help`, `execute`, opcional `autocomplete` |
 | `src/commands/language.js` | `/language`: muestra o cambia el idioma de este guild (`data/locale.json`; `auto` lo borra), solo operadores |
 | `src/control.js` | Lógica compartida de `/start`, `/stop`, `/restart`: guard, resolución del servidor, confirmación, seguimiento |
-| `src/permissions.js` | `isOperator()` según `operatorRoleIds` del guild |
+| `src/permissions.js` | `isOperator(member, comando)`: roles de `commandRoles` del guild para ese comando, si no `operatorRoleIds`, si no todos |
 | `src/config.js` | Resolución multi-guild: alias, servidores visibles, canal de feed, overrides de runtime |
 | `src/gameap.js` | Cliente HTTP del panel (timeout 15 s, error con `status`) |
 | `src/watcher.js` | Ciclo de polling de jugadores, decisión de anunciar o callar, y reloj de inactividad (auto-apagado) |
