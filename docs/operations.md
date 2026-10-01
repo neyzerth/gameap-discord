@@ -22,8 +22,10 @@ cp .env.example .env && chmod 600 .env     # and fill in DISCORD_TOKEN + GAMEAP_
 cp config/servers.example.json config/servers.json    # and edit the real alias/label/ids
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 77 tests, must pass before deploying
+npm test                                   # 96 tests, must pass before deploying
 npm run deploy                             # registers the GLOBAL commands
+npm run sync:permissions -- --dry-run      # print what each guild would get, then run it for real
+npm run sync:permissions                   # grants each guild the roles of its config
 docker compose pull && docker compose up -d
 docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
@@ -55,7 +57,11 @@ If you touched `src/commands/` (name, description, or options), **also**:
 
 ```bash
 npm run deploy
+npm run sync:permissions
 ```
+
+`npm run deploy` re-registers everything, and the gated commands go back to hidden from non-admins
+until the sync runs again.
 
 ## Using the published image
 
@@ -114,6 +120,18 @@ curl -X PUT "https://discord.com/api/v10/applications/<APP_ID>/guilds/<GUILD_ID>
 
 Globals are changed with `npm run deploy`. If the client shows old or duplicated commands,
 `Ctrl+R` in Discord clears the local cache.
+
+### Visibility: default permissions plus overwrites
+
+`default_member_permissions` only takes permission bits, so a role id cannot be expressed in the
+command definition. The gated commands are therefore registered with **`"0"`** — hidden from every
+member without the Administrator flag — and `npm run sync:permissions` writes the roles back as
+per-guild, per-command `allow` overwrites, read from each guild's `commandRoles` / `operatorRoleIds`.
+A guild with no roles configured gets an explicit `@everyone` allow, so "anyone may operate" keeps
+meaning anyone. Run it with `--dry-run` to print what it would grant, without touching Discord.
+
+The commands stay hidden for non-admins until the sync runs, which is why it belongs right after
+`npm run deploy`.
 
 ## Credentials
 
@@ -175,6 +193,7 @@ server off (`server 8 is offline; skipping poll`).
 | `DISCORD_TOKEN is required` / `GAMEAP_TOKEN is required` | `.env` missing the variable (or a bad env_file) | Fill `.env`, `docker compose up -d` |
 | `Command failed` on all commands | PAT without abilities, or panel down | `curl /api/servers` with the PAT; check abilities |
 | Commands don't show up in Discord | Global registration hasn't propagated | `Ctrl+R`; `/help` in a channel; verify `npm run deploy` |
+| A gated command doesn't show up for a member | The sync hasn't run for that guild, or the member holds none of the listed roles | `npm run sync:permissions`; check `commandRoles` / `operatorRoleIds` (admins always see it) |
 | Duplicated commands appear | Global + per-guild registration, or app with *user install* | Clear the per-guild set (above) and disable user install in the portal; `Ctrl+R` |
 | The feed never publishes | No `announce: true`, no `feedTarget()`, or `unsupported` | `docker logs` (look for `baseline server`), `/feed <server> on` |
 | `could not announce to <id>` | Bot lacks permissions in that channel | Grant View Channel + Send Messages + Embed Links |
@@ -247,7 +266,7 @@ configured locale (`guilds.json` → `DEFAULT_LOCALE` → `en`).
 
 ## Checklist after any change
 
-- [ ] `npm test` green (77 tests)
+- [ ] `npm test` green (96 tests)
 - [ ] `docker logs --tail 10` without `ERROR`, with `loaded 11 commands` and `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` at 0
 - [ ] A real command tested (`/servers` and `/players <server>`)

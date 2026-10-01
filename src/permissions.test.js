@@ -87,3 +87,31 @@ test('a member outside a guild is never an operator', () => {
   assert.equal(isOperator(null, 'start'), false);
   assert.equal(isOperator({ roles: { cache: { some: () => false } } }, 'start'), false);
 });
+
+function fakeAdmin(roleIds, { guildId = 'g1', admin = true } = {}) {
+  return {
+    guild: { id: guildId },
+    roles: { cache: { some: (fn) => roleIds.map((id) => ({ id })).some(fn) } },
+    permissions: admin === null ? undefined : { has: () => admin },
+  };
+}
+
+test('the Administrator flag opens every gated command by default', () => {
+  withGuilds({ g1: { operatorRoleIds: ['role-op'], commandRoles: { rcon: ['role-admin'] } } });
+  assert.equal(isOperator(fakeAdmin([]), 'rcon'), true);
+  assert.equal(isOperator(fakeAdmin([], { admin: false }), 'rcon'), false);
+  restore();
+});
+
+test('adminBypass false makes the roles mandatory again, even for admins', () => {
+  withGuilds({ g1: { operatorRoleIds: ['role-op'], adminBypass: false } });
+  assert.equal(isOperator(fakeAdmin([]), 'start'), false);
+  assert.equal(isOperator(fakeAdmin(['role-op'], { admin: true }), 'start'), true);
+  restore();
+});
+
+test('a member without the permissions field never bypasses the gate', () => {
+  withGuilds({ g1: { operatorRoleIds: ['role-op'] } });
+  assert.equal(isOperator(fakeAdmin([], { admin: null }), 'start'), false);
+  restore();
+});

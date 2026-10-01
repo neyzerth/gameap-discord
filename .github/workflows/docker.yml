@@ -28,7 +28,7 @@ env:
 
 jobs:
   # Los tests primero: no se publica una imagen que no pasa la suite ni el
-  # chequeo de documentación (bilingüe). 77 tests, sin dependencias de red.
+  # chequeo de documentación (bilingüe). 96 tests, sin dependencias de red.
   test:
     runs-on: ubuntu-latest
     steps:

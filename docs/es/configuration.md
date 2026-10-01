@@ -77,7 +77,7 @@ autocompletado, y no se pueden usar en ningún comando).
 
 ```json
 {
-  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "feedChannelId": null, "servers": null, "locale": null },
+  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "adminBypass": true, "feedChannelId": null, "servers": null, "locale": null },
   "guilds": {
     "123456789012345678": {
       "feedChannelId": "234567890123456789",
@@ -96,6 +96,7 @@ autocompletado, y no se pueden usar en ningún comando).
 |---|---|---|
 | `operatorRoleIds` | `[]` | `[]` → **cualquiera** puede usar los comandos de control, salvo que `commandRoles` restrinja alguno (setup actual de amigos de confianza). Con ids → solo quien tenga uno de esos roles |
 | `commandRoles` | `{}` | Roles **por comando**: `{ "<comando>": ["<id rol>"] }`. **Reemplaza** a `operatorRoleIds` en ese comando (puede ser más chico o más amplio). Una lista vacía significa "no definido" y hereda `operatorRoleIds` |
+| `adminBypass` | `true` | `true` → quien tenga el flag Administrator de Discord salta todo chequeo de roles. `false` → los roles son obligatorios incluso para admins |
 | `servers` | `null` | `null` → ve todos los de `servers.json`. Con lista → solo esos ids |
 | `feedChannelId` | `null` | Canal por defecto del feed para ese guild |
 | `feeds` | `{}` | Canal específico por servidor: `{ "<serverId>": "<channelId>" }` |

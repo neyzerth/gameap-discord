@@ -44,11 +44,12 @@ Responsibilities, one line each:
 | File | Responsibility |
 |---|---|
 | `src/index.js` | Login, command loading, interaction router, watcher startup, `guildCreate` |
-| `src/registry.js` | Single source of the command list (used by the bot, the deploy and `/help`) |
+| `src/registry.js` | Single source of the command list (used by the bot, the deploy and `/help`) and of `GATED_COMMANDS` |
 | `src/commands/*.js` | One command per file: `data` (definition), `help`, `execute`, optional `autocomplete` |
 | `src/commands/language.js` | `/language`: shows or overrides this guild's locale (`data/locale.json`; `auto` clears it), operators only |
 | `src/control.js` | Shared `/start`, `/stop`, `/restart` logic: guard, game server resolution, confirmation, tracking |
-| `src/permissions.js` | `isOperator(member, command)`: roles from the guild's `commandRoles` for that command, else `operatorRoleIds`, else everyone |
+| `src/permissions.js` | `isOperator(member, command)`: the Administrator flag (unless `adminBypass: false`), then the guild's `commandRoles` for that command, then `operatorRoleIds`, then everyone |
+| `src/command-permissions.js` | **Pure** Discord-side visibility: the permission overwrites a guild gets for a gated command |
 | `src/config.js` | Multi-guild resolution: aliases, visible game servers, feed channel, runtime overrides |
 | `src/gameap.js` | HTTP panel client (15 s timeout, errors carry `status`) |
 | `src/watcher.js` | Player polling loop, announce-or-stay-quiet decision, and the inactivity clock (auto-stop) |
@@ -58,6 +59,7 @@ Responsibilities, one line each:
 | `src/i18n/` | Locale catalogs (`locales/*.json`) and the translation API: `t()`, `plural()`, per-guild resolution, Discord localizations |
 | `src/help.js` | General and per-command help, generated from the live commands |
 | `src/logger.js` | Log with levels (`LOG_LEVEL`), no secrets |
+| `src/sync-permissions.js` | Writes the per-guild command permissions to Discord (`npm run sync:permissions`); `src/deploy-commands.js` registers them hidden (`src/discord-app.js` resolves the app id) |
 
 All user-facing text is localized and the language is **per Discord guild**: the `/language`
 override (`data/locale.json`) wins, then the guild's entry in `guilds.json`, then `defaults`, then
