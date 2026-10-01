@@ -24,8 +24,10 @@ const ACTIONS = {
 const TIMEOUT_MS = 120_000;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function guardOperator(interaction) {
-  if (isOperator(interaction.member)) return true;
+// The command name comes from the interaction, so `/rcon` can have its own roles
+// (`commandRoles`) while everything else keeps the guild's `operatorRoleIds`.
+export async function guardOperator(interaction, commandName = interaction?.commandName) {
+  if (isOperator(interaction.member, commandName)) return true;
   await interaction.reply({
     content: t(localeFor(interaction.guildId), 'errors.notAllowed'),
     flags: MessageFlags.Ephemeral,

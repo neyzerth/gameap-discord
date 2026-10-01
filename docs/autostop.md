@@ -68,7 +68,7 @@ fails (panel down), it is logged and **not** retried in a loop — the cycle mus
 | `/autostop mc-survival hours:2 warn:0` | Same, but **without** a prior warning message |
 | `/autostop mc-survival hours:0` | **Disables** the auto-stop |
 
-- Only **operators** (with `operatorRoleIds: []` = everyone, like the rest of the bot).
+- Only **operators** (with `operatorRoleIds: []` = everyone, like the rest of the bot; `commandRoles.autostop` can give it its own roles).
 - The setting is saved in `data/autostop.json` and applies **immediately**, without restarting the bot.
 - Limits: `hours` 0-168, `warn` 0-120.
 

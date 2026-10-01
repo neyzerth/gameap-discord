@@ -17,8 +17,8 @@ un jugador.
   de juego y el firewall puede seguir cerrado.
 - **Feed de jugadores** — un sondeo anuncia entradas y salidas en el canal que elijas, con reglas que
   evitan avisos falsos.
-- **Un bot, varios servidores** — varios guilds de Discord con sus propios canales, roles operadores y
-  game servers visibles, todo configurado en JSON.
+- **Un bot, varios servidores** — varios guilds de Discord con sus propios canales, roles operadores
+  **por comando** y game servers visibles, todo configurado en JSON.
 
 ## Cómo funciona
 

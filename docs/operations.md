@@ -135,8 +135,11 @@ and the panel PAT must be created with **only** the 6 required abilities.
    without a feed):
 
 ```json
-"<GUILD_ID>": { "feedChannelId": "<CHANNEL_ID>", "servers": ["8"], "operatorRoleIds": [] }
+"<GUILD_ID>": { "feedChannelId": "<CHANNEL_ID>", "servers": ["8"], "operatorRoleIds": [], "commandRoles": { "rcon": ["<ROLE_ID>"] } }
 ```
+
+   `operatorRoleIds` (whole gate) and `commandRoles` (per command) decide who may operate; leave both
+   out and **anyone** in that guild can. See [configuration.md](configuration.md#configguildsjson).
 
 4. `docker compose restart gameap-bot` and check for `— 2 guild(s)` in the log.
 5. Real test: inject a fake player in `data/state.json` and restart (see
