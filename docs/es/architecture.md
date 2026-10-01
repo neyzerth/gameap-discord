@@ -44,11 +44,12 @@ Responsabilidades, en una línea cada una:
 | Archivo | Responsabilidad |
 |---|---|
 | `src/index.js` | Login, carga de comandos, router de interacciones, arranque del watcher, `guildCreate` |
-| `src/registry.js` | Única fuente de la lista de comandos (la usan el bot, el deploy y `/help`) |
+| `src/registry.js` | Fuente única de la lista de comandos (la usan el bot, el deploy y `/help`) y de `GATED_COMMANDS` |
 | `src/commands/*.js` | Un comando por archivo: `data` (definición), `help`, `execute`, opcional `autocomplete` |
 | `src/commands/language.js` | `/language`: muestra o cambia el idioma de este guild (`data/locale.json`; `auto` lo borra), solo operadores |
 | `src/control.js` | Lógica compartida de `/start`, `/stop`, `/restart`: guard, resolución del servidor, confirmación, seguimiento |
-| `src/permissions.js` | `isOperator(member, comando)`: roles de `commandRoles` del guild para ese comando, si no `operatorRoleIds`, si no todos |
+| `src/permissions.js` | `isOperator(member, comando)`: el flag Administrator (salvo `adminBypass: false`), luego `commandRoles` del guild para ese comando, luego `operatorRoleIds`, luego todos |
+| `src/command-permissions.js` | **Puro**: la visibilidad del lado de Discord, los overrides que recibe un guild por comando con guard |
 | `src/config.js` | Resolución multi-guild: alias, servidores visibles, canal de feed, overrides de runtime |
 | `src/gameap.js` | Cliente HTTP del panel (timeout 15 s, error con `status`) |
 | `src/watcher.js` | Ciclo de polling de jugadores, decisión de anunciar o callar, y reloj de inactividad (auto-apagado) |
@@ -58,6 +59,7 @@ Responsabilidades, en una línea cada una:
 | `src/i18n/` | Catálogos de idiomas (`locales/*.json`) y la API de traducción: `t()`, `plural()`, resolución por guild, localizaciones de Discord |
 | `src/help.js` | Ayuda general y por comando, generada desde los comandos vivos |
 | `src/logger.js` | Log con niveles (`LOG_LEVEL`), sin secretos |
+| `src/sync-permissions.js` | Escribe en Discord los permisos por guild (`npm run sync:permissions`); `src/deploy-commands.js` los registra ocultos (`src/discord-app.js` resuelve el app id) |
 
 Todo el texto que ve el usuario está localizado y el idioma es **por guild de Discord**: primero el
 override de `/language` (`data/locale.json`), luego la entrada del guild en `guilds.json`, luego los

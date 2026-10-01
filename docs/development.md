@@ -8,8 +8,9 @@
 - `npm install` once in `/opt/gameap-discord-bot`.
 
 ```bash
-npm test                  # 77 tests, no network or Discord
+npm test                  # 96 tests, no network or Discord
 npm run deploy            # registers the global commands (needs .env)
+npm run sync:permissions  # grants each guild its roles (needs .env; --dry-run first)
 npm start                  # run the bot outside Docker (needs .env in the environment)
 docker compose pull && docker compose up -d   # the published image (local build: see below)
 ```
@@ -21,7 +22,10 @@ src/
   index.js           discord.js client, interaction router, guildCreate, shutdown
   registry.js        loads src/commands/*.js + usageOf() for help
   config.js          multi-guild resolution (alias, visibility, feed, overrides)
-  permissions.js     isOperator(member, command) from commandRoles / operatorRoleIds
+  permissions.js     isOperator(member, command) from commandRoles / operatorRoleIds (+ Administrator bypass)
+  command-permissions.js  pure Discord-side overwrites for the gated commands
+  sync-permissions.js     writes those overwrites per guild (npm run sync:permissions)
+  discord-app.js     resolves the application id from the token (deploy + sync)
   gameap.js          panel HTTP client (15 s timeout)
   watcher.js         polling cycle and announce decision
   autostop.js        pure idle clock (resolveAutoStop, accumulateIdle, evaluateIdle)
@@ -37,7 +41,7 @@ src/
     locales/         en.json (defines every key), es-MX.json
   commands/          11 commands: help.js, servers.js, status.js, players.js, start.js,
                      stop.js, restart.js, rcon.js, feed.js, autostop.js, language.js
-  *.test.js          state, config, autostop, help, language and i18n (77 cases)
+  *.test.js          state, config, autostop, help, language, i18n, permissions, gating, command-permissions (96 cases)
 docs/                this documentation
 ```
 

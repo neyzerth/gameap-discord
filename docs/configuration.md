@@ -74,7 +74,7 @@ Servers outside this file **do not exist** for the bot (they don't show up in `/
 
 ```json
 {
-  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "feedChannelId": null, "servers": null, "locale": null },
+  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "adminBypass": true, "feedChannelId": null, "servers": null, "locale": null },
   "guilds": {
     "123456789012345678": {
       "feedChannelId": "234567890123456789",
@@ -93,6 +93,7 @@ Servers outside this file **do not exist** for the bot (they don't show up in `/
 |---|---|---|
 | `operatorRoleIds` | `[]` | `[]` → **anyone** can use the control commands, unless `commandRoles` narrows one (current setup: trusted friends). With ids → only those holding one of those roles |
 | `commandRoles` | `{}` | Roles **per command**: `{ "<command>": ["<role id>"] }`. It **replaces** `operatorRoleIds` for that command (it can be narrower or wider). An empty list means "not set" and inherits `operatorRoleIds` |
+| `adminBypass` | `true` | `true` → a member with Discord's Administrator flag skips every role check. `false` → the roles are mandatory even for admins |
 | `servers` | `null` | `null` → sees all from `servers.json`. With a list → only those ids |
 | `feedChannelId` | `null` | Default feed channel for that guild |
 | `feeds` | `{}` | Per-server specific channel: `{ "<serverId>": "<channelId>" }` |

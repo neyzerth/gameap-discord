@@ -1,5 +1,5 @@
 {
-  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "feedChannelId": null, "servers": null, "locale": null },
+  "defaults": { "operatorRoleIds": [], "commandRoles": {}, "adminBypass": true, "feedChannelId": null, "servers": null, "locale": null },
   "guilds": {
     "123456789012345678": {
       "feedChannelId": "234567890123456789",

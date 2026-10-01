@@ -3,11 +3,14 @@
 //   node --env-file=.env src/deploy-commands.js            -> global (works in every guild)
 //   node --env-file=.env src/deploy-commands.js --guild ID -> instant, single guild
 //
-// The application id is resolved from the token (authoritative) instead of
-// trusting DISCORD_APP_ID, which is easy to confuse with the guild id.
+// The gated commands (registry.js GATED_COMMANDS) are registered with
+// `default_member_permissions: "0"`: Discord hides them from every member
+// without the Administrator flag, and `npm run sync:permissions` grants each
+// guild the roles its config says. Until that sync runs, only admins see them.
 
 import { REST, Routes } from 'discord.js';
-import { loadCommands } from './registry.js';
+import { deployBody, loadCommands } from './registry.js';
+import { resolveAppId } from './discord-app.js';
 
 const { DISCORD_TOKEN } = process.env;
 if (!DISCORD_TOKEN) {
@@ -16,24 +19,10 @@ if (!DISCORD_TOKEN) {
 }
 
 const commands = await loadCommands();
-const body = [...commands.values()].map((mod) => mod.data.toJSON());
+const body = deployBody(commands);
 
 const rest = new REST().setToken(DISCORD_TOKEN);
-
-let appId = process.env.DISCORD_APP_ID;
-try {
-  const me = await rest.get(Routes.currentApplication());
-  if (appId && appId !== me.id) {
-    console.warn(`DISCORD_APP_ID (${appId}) does not match the token's application; using ${me.id}`);
-  }
-  appId = me.id;
-} catch (err) {
-  console.warn(`could not resolve the application id from the token (${err.message}); using DISCORD_APP_ID`);
-}
-if (!appId) {
-  console.error('no application id available');
-  process.exit(1);
-}
+const appId = await resolveAppId(rest);
 
 const guildArgIndex = process.argv.indexOf('--guild');
 // No DISCORD_GUILD_ID fallback on purpose: that variable is a convenience for other
@@ -58,3 +47,9 @@ console.log(
     .map((c) => `/${c.name}`)
     .join(' ')}`,
 );
+if (result.some((c) => c.default_member_permissions === '0')) {
+  console.log(
+    'Gated commands are hidden from every non-admin until each guild gets its roles:\n' +
+      '  npm run sync:permissions',
+  );
+}

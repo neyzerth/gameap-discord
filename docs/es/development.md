@@ -8,8 +8,9 @@
 - `npm install` una sola vez en `/opt/gameap-discord-bot`.
 
 ```bash
-npm test                  # 77 tests, sin red ni Discord
+npm test                  # 96 tests, sin red ni Discord
 npm run deploy            # registra los comandos globales (necesita .env)
+npm run sync:permissions  # da a cada guild sus roles (necesita .env; --dry-run primero)
 npm start                 # correr el bot fuera de Docker (necesita .env en el entorno)
 docker compose pull && docker compose up -d   # la imagen publicada (build local: ver abajo)
 ```
@@ -21,7 +22,10 @@ src/
   index.js           cliente discord.js, router de interacciones, guildCreate, shutdown
   registry.js        carga de src/commands/*.js + usageOf() para la ayuda
   config.js          resolución multi-guild (alias, visibilidad, feed, overrides)
-  permissions.js     isOperator(member, comando) desde commandRoles / operatorRoleIds
+  permissions.js     isOperator(member, comando) desde commandRoles / operatorRoleIds (+ bypass de Administrator)
+  command-permissions.js  overrides puros del lado de Discord para los comandos con guard
+  sync-permissions.js     escribe esos overrides por guild (npm run sync:permissions)
+  discord-app.js     resuelve el application id del token (deploy + sync)
   gameap.js          cliente HTTP del panel (timeout 15 s)
   watcher.js         ciclo de polling y decisión de anunciar
   autostop.js        reloj de inactividad puro (resolveAutoStop, accumulateIdle, evaluateIdle)
@@ -37,7 +41,7 @@ src/
     locales/         en.json (define todas las claves), es-MX.json
   commands/          11 comandos: help.js, servers.js, status.js, players.js, start.js,
                      stop.js, restart.js, rcon.js, feed.js, autostop.js, language.js
-  *.test.js          state, config, autostop, help, language e i18n (77 casos)
+  *.test.js          state, config, autostop, help, language, i18n, permisos, gating, command-permissions (96 casos)
 docs/                esta documentación
 ```
 

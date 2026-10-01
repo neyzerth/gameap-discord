@@ -60,6 +60,14 @@ que ese grupo necesita — lo que no esté listado cae en `operatorRoleIds`.
 "commandRoles": { "start": ["<id rol mod>"], "stop": ["<id rol mod>"], "rcon": ["<id rol admin>"] }
 ```
 
+Quien tenga el flag **Administrator** de Discord pasa todo chequeo (útil para el dueño del server).
+Con `"adminBypass": false` en ese guild los roles vuelven a ser obligatorios, admins incluidos.
+
+En el cliente, los comandos con guard solo se **muestran** a quien puede ejecutarlos: se registran
+ocultos (`default_member_permissions: "0"`) y `npm run sync:permissions` le da a cada guild los roles
+de su config. Detalle y el paso del sync:
+[operations.md](operations.md#visibilidad-permisos-por-defecto-más-overrides).
+
 Referencia de campos, herencia desde `defaults` y ejemplo completo:
 [configuration.md](configuration.md#configguildsjson).
 

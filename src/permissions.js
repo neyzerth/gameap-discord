@@ -1,3 +1,4 @@
+import { PermissionFlagsBits } from 'discord.js';
 import { guildConfig } from './config.js';
 
 // Role gate, per guild AND per command.
@@ -25,10 +26,20 @@ export function requiredRoles(guildId, commandName) {
   return Array.isArray(operators) && operators.length > 0 ? operators : null;
 }
 
+// Discord's own escape hatch: a member with the Administrator flag can use every
+// gated command (Discord shows it to them anyway, because of
+// `default_member_permissions: "0"`). Turn it off per guild with
+// `"adminBypass": false`.
+export function isAdmin(member, cfg) {
+  if (cfg?.adminBypass === false) return false;
+  return member?.permissions?.has?.(PermissionFlagsBits.Administrator) === true;
+}
+
 // Without a command name it answers the broad question ("is this member an
 // operator?"); with one, commandRoles for that command applies.
 export function isOperator(member, commandName = null) {
   if (!member?.guild?.id) return false;
+  if (isAdmin(member, guildConfig(member.guild.id))) return true;
   const roles = requiredRoles(member.guild.id, commandName);
   if (!roles) return true;
   return member.roles.cache.some((role) => roles.includes(role.id));
