@@ -8,7 +8,7 @@
 - `npm install` once in `/opt/gameap-discord-bot`.
 
 ```bash
-npm test                  # 96 tests, no network or Discord
+npm test                  # 104 tests, no network or Discord
 npm run deploy            # registers the global commands (needs .env)
 npm run check:permissions  # read-only: what each guild still has to grant (needs .env)
 npm start                  # run the bot outside Docker (needs .env in the environment)
@@ -41,7 +41,7 @@ src/
     locales/         en.json (defines every key), es-MX.json
   commands/          11 commands: help.js, servers.js, status.js, players.js, start.js,
                      stop.js, restart.js, rcon.js, feed.js, autostop.js, language.js
-  *.test.js          state, config, autostop, help, language, i18n, permissions, gating, command-permissions (96 cases)
+  *.test.js          state, config, autostop, help, language, i18n, permissions, gating, command-permissions (104 cases)
 docs/                this documentation
 ```
 

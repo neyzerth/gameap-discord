@@ -22,7 +22,7 @@ cp .env.example .env && chmod 600 .env     # y rellenar DISCORD_TOKEN + GAMEAP_T
 cp config/servers.example.json config/servers.json    # y editar alias/label/ids reales
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 96 tests, deben pasar antes de desplegar
+npm test                                   # 104 tests, deben pasar antes de desplegar
 npm run deploy                             # registra los comandos GLOBALES (los gated quedan ocultos)
 npm run check:permissions                  # auditoría solo lectura: qué le falta dar a cada guild
 docker compose pull && docker compose up -d
@@ -146,7 +146,9 @@ npm run check:permissions     # solo lectura: config vs Discord, guild por guild
 ```
 
 Sale con código distinto de cero mientras a un guild le falte algo, e imprime los ids exactos que hay
-que dar. Los comandos con guard quedan ocultos para los que no son admins hasta que cada guild haga
+que dar. Una entrada `@everyone` arriba del todo cuenta como *ok*: es la forma más simple de que los
+comandos sean visibles para todo el guild, y quién puede ejecutarlos lo decide el gate del bot, no
+Discord. Los comandos con guard quedan ocultos para los que no son admins hasta que cada guild haga
 ese paso — Discord no tiene API para hacerlo desde un bot.
 
 ## Credenciales
@@ -285,7 +287,7 @@ solo cuesta un baseline silencioso (state) o los overrides de runtime (`/feed`, 
 
 ## Checklist después de cualquier cambio
 
-- [ ] `npm test` en verde (96 tests)
+- [ ] `npm test` en verde (104 tests)
 - [ ] `docker logs --tail 10` sin `ERROR`, con `loaded 11 commands` y `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` en 0
 - [ ] Un comando real probado (`/servers` y `/players <server>`)
