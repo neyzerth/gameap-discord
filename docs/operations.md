@@ -22,7 +22,7 @@ cp .env.example .env && chmod 600 .env     # and fill in DISCORD_TOKEN + GAMEAP_
 cp config/servers.example.json config/servers.json    # and edit the real alias/label/ids
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 106 tests, must pass before deploying
+npm test                                   # the suite, must pass before deploying
 npm run deploy                             # registers the GLOBAL commands (gated ones hidden)
 npm run check:permissions                  # read-only audit: what each guild still has to grant
 docker compose pull && docker compose up -d
@@ -286,7 +286,7 @@ configured locale (`guilds.json` → `DEFAULT_LOCALE` → `en`).
 
 ## Checklist after any change
 
-- [ ] `npm test` green (106 tests)
+- [ ] `npm test` green
 - [ ] `docker logs --tail 10` without `ERROR`, with `loaded 11 commands` and `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` at 0
 - [ ] A real command tested (`/servers` and `/players <server>`)
