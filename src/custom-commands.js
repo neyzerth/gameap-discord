@@ -96,6 +96,29 @@ export function renderTemplate(template, values = {}) {
   return { ok: true, command };
 }
 
+// A definition may send one command (`template`) or a pipeline of them
+// (`templates`), which is how "add the player and then reload the file" becomes a
+// single slash command. Every entry is rendered with the same argument values and
+// sanitized by renderTemplate() before anything reaches the panel.
+export function renderAll(target, values = {}) {
+  const list = Array.isArray(target?.templates) ? target.templates : [target?.template];
+  const commands = [];
+  for (const template of list) {
+    const rendered = renderTemplate(template, values);
+    if (!rendered.ok) return { ...rendered, commands };
+    commands.push(rendered.command);
+  }
+  return { ok: true, commands };
+}
+
+// The templates of a definition: one (`template`) or a pipeline (`templates`).
+export const templatesOf = (target) =>
+  Array.isArray(target?.templates)
+    ? target.templates
+    : typeof target?.template === 'string'
+      ? [target.template]
+      : [];
+
 const isRegex = (value) => {
   try {
     new RegExp(value);
@@ -135,10 +158,20 @@ export function validateDefinition(name, def, builtinNames = []) {
       problems.push(`${label}definition must be an object`);
       continue;
     }
-    if (typeof target.template !== 'string' || !target.template.trim()) {
-      problems.push(`${label}template is required`);
-    } else if (/[\n\r;]/.test(target.template)) {
-      problems.push(`${label}template must not contain line breaks or ";"`);
+    if (target.template !== undefined && target.templates !== undefined) {
+      problems.push(`${label}use template or templates, not both`);
+    } else if (target.templates !== undefined && !Array.isArray(target.templates)) {
+      problems.push(`${label}templates must be an array`);
+    } else if (!templatesOf(target).length) {
+      problems.push(`${label}template (or templates) is required`);
+    }
+
+    for (const template of templatesOf(target)) {
+      if (typeof template !== 'string' || !template.trim()) {
+        problems.push(`${label}every template must be a non-empty string`);
+      } else if (/[\n\r;]/.test(template)) {
+        problems.push(`${label}template must not contain line breaks or ";"`);
+      }
     }
     if (target.options !== undefined && !Array.isArray(target.options)) {
       problems.push(`${label}options must be an array`);
@@ -147,7 +180,7 @@ export function validateDefinition(name, def, builtinNames = []) {
 
     const options = target.options ?? [];
     const names = options.map((o) => o?.name);
-    const used = placeholders(target.template ?? '');
+    const used = [...new Set(templatesOf(target).flatMap((t) => placeholders(t)))];
     let sawOptional = false;
 
     for (const opt of options) {
@@ -273,7 +306,7 @@ function buildExecutor(name, def) {
       values[opt.name] = value;
     }
 
-    const rendered = renderTemplate(target.template, values);
+    const rendered = renderAll(target, values);
     if (!rendered.ok) {
       if (rendered.reason === 'rejected') {
         return replyEphemeral(interaction, t(locale, 'errors.rconRejected'));
@@ -285,18 +318,29 @@ function buildExecutor(name, def) {
     }
 
     await interaction.deferReply(def.ephemeral === true ? { flags: MessageFlags.Ephemeral } : {});
-    // Audit trail: what was actually sent, which server, and by whom.
-    log.info(`/${name} -> server ${serverId}: ${rendered.command} (by ${interaction.user?.tag ?? interaction.user?.id})`);
+
+    const who = interaction.user?.tag ?? interaction.user?.id;
+    const many = rendered.commands.length > 1;
+    const outputs = [];
+    let current = rendered.commands[0];
 
     try {
-      const { output } = await rconCommand(serverId, rendered.command);
-      const text = String(output ?? '').trim();
-      await interaction.editReply(
-        text ? `\`\`\`\n${text.slice(0, MAX_OUTPUT_LEN)}\n\`\`\`` : t(locale, 'errors.rconSent'),
-      );
+      // Sequential on purpose: a pipeline (add, then reload) makes no sense in
+      // parallel, and the first failure stops it with the failing line reported.
+      for (const command of rendered.commands) {
+        current = command;
+        // Audit trail: what was actually sent, which server, and by whom.
+        log.info(`/${name} -> server ${serverId}: ${command} (by ${who})`);
+        const { output } = await rconCommand(serverId, command);
+        const text = String(output ?? '').trim();
+        if (text) outputs.push(many ? `» ${command}\n${text}` : text);
+      }
+      const body = outputs.join('\n\n').slice(0, MAX_OUTPUT_LEN);
+      await interaction.editReply(body ? `\`\`\`\n${body}\n\`\`\`` : t(locale, 'errors.rconSent'));
     } catch (err) {
+      const detail = `${err.status ?? ''} ${err.message}`.trim();
       await interaction.editReply(
-        t(locale, 'errors.rconFailed', { message: `${err.status ?? ''} ${err.message}`.trim() }),
+        t(locale, 'errors.rconFailed', { message: many ? `${current}: ${detail}` : detail }),
       );
     }
   };
