@@ -71,6 +71,10 @@ Details and the audit: [operations.md](operations.md).
 Field reference, inheritance from `defaults` and a complete example:
 [configuration.md](configuration.md#configguildsjson).
 
+Config commands (`config/commands.json`) run through the same resolution with their own name, so
+`commandRoles.<command>` can restrict one of them without touching the rest:
+[custom-commands.md](custom-commands.md).
+
 ## Information
 
 ### `/servers`

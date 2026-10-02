@@ -1,0 +1,51 @@
+{
+  "guilds": {
+    "<guild id>": {
+      "<command name>": {
+        "description": "What the command does (max 100 characters)",
+        "server": "<server id from config/servers.json, or omit for a `server` option>",
+        "ephemeral": true,
+        "hidden": false,
+        "subcommands": {
+          "<subcommand>": {
+            "description": "What this subcommand does",
+            "templates": ["modcommand sub {player}", "modcommand reload"],
+            "options": [
+              {
+                "name": "player",
+                "type": "string",
+                "required": true,
+                "description": "Player name",
+                "source": "players",
+                "pattern": "^[A-Za-z0-9_]{3,16}$"
+              }
+            ]
+          },
+          "<other subcommand>": {
+            "description": "Another subcommand",
+            "template": "modcommand reload"
+          }
+        }
+      },
+      "<flat command>": {
+        "description": "A command without subcommands",
+        "template": "say {message}",
+        "options": [
+          {
+            "name": "message",
+            "type": "string",
+            "required": true,
+            "description": "Text to send"
+          },
+          {
+            "name": "times",
+            "type": "integer",
+            "description": "How many times",
+            "min": 1,
+            "max": 5
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,6 +1,8 @@
 import { Client, GatewayIntentBits, Events, MessageFlags } from 'discord.js';
 import { startWatcher } from './watcher.js';
 import { loadCommands } from './registry.js';
+import { guildCommand, registerGuildCommands } from './custom-commands.js';
+import { resolveAppId } from './discord-app.js';
 import { save, loadFeeds, loadAutoStop, loadLocales, getState } from './state.js';
 import { setOverrides, setAutoStopOverrides, setLocaleOverrides, localeFor } from './config.js';
 import { t } from './i18n/index.js';
@@ -22,11 +24,16 @@ async function main() {
 
   const client = new Client({ intents: [GatewayIntentBits.Guilds] });
   client.commands = await loadCommands();
+  // Config commands (config/commands.json) are per guild, so they are looked up
+  // by guild at dispatch time instead of living in the global map.
+  const builtinNames = [...client.commands.keys()];
+  const resolveCommand = (guildId, name) =>
+    client.commands.get(name) ?? guildCommand(guildId, name, builtinNames);
   log.info(`loaded ${client.commands.size} commands`);
 
   client.on(Events.InteractionCreate, async (interaction) => {
     if (interaction.isAutocomplete()) {
-      const command = client.commands.get(interaction.commandName);
+      const command = resolveCommand(interaction.guildId, interaction.commandName);
       try {
         if (command?.autocomplete) await command.autocomplete(interaction);
         else await interaction.respond([]);
@@ -37,7 +44,7 @@ async function main() {
     }
 
     if (!interaction.isChatInputCommand()) return;
-    const command = client.commands.get(interaction.commandName);
+    const command = resolveCommand(interaction.guildId, interaction.commandName);
     if (!command) return;
 
     try {
@@ -61,6 +68,17 @@ async function main() {
   client.once(readyEvent, () => {
     log.info(`logged in as ${client.user.tag} — ${client.guilds.cache.size} guild(s)`);
     startWatcher(client);
+
+    // Config commands are registered per guild, which is instant (no global
+    // propagation) and keeps them scoped. Failure here must not stop the bot.
+    (async () => {
+      try {
+        const appId = await resolveAppId(client.rest);
+        await registerGuildCommands({ rest: client.rest, appId, builtinNames });
+      } catch (err) {
+        log.warn(`config commands not registered: ${err.message}`);
+      }
+    })();
   });
 
   // Log what we can see the moment we are invited, so config/guilds.json can be

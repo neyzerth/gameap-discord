@@ -95,6 +95,7 @@ en [`docs/es/`](docs/es/README.md) (este idioma).
 |---|---|
 | [architecture.md](docs/es/architecture.md) | Cómo se conectan las piezas y por qué cada decisión de diseño |
 | [commands.md](docs/es/commands.md) | Los 11 comandos y sus errores |
+| [custom-commands.md](docs/es/custom-commands.md) | Comandos extra por guild desde `config/commands.json` (atajos de RCON) |
 | [configuration.md](docs/es/configuration.md) | `.env`, los JSON y la precedencia del feed |
 | [feed.md](docs/es/feed.md) | El watcher y sus reglas anti-spam |
 | [autostop.md](docs/es/autostop.md) | Auto-apagado por inactividad (`/autostop`) y modo dry-run |

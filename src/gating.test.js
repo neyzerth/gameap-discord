@@ -47,3 +47,22 @@ test('the registration body hides the gated commands from non-admins', async () 
 test('the information commands are never gated', () => {
   for (const name of ['servers', 'status', 'players', 'help']) assert.equal(isGated(name), false);
 });
+
+// Config commands are RCON by definition, so they must never grow a path that
+// skips the operator gate, the template renderer or the panel call.
+test('config commands always pass through the gate, the renderer and the panel', () => {
+  const source = readFileSync(join(COMMANDS_DIR, '..', 'custom-commands.js'), 'utf8');
+  assert.match(source, /guardOperator\(interaction, name\)/, 'the executor must gate on the command name');
+  assert.match(source, /renderAll\(target, values\)/, 'the command must be rendered, never raw');
+  assert.match(source, /renderTemplate\(template, values\)/, 'every template of a pipeline is sanitized');
+  assert.match(source, /rconCommand\(serverId, command\)/, 'only the rendered command reaches RCON');
+});
+
+test('config commands are registered per guild, never globally', () => {
+  const source = readFileSync(join(COMMANDS_DIR, '..', 'custom-commands.js'), 'utf8');
+  assert.match(source, /Routes\.applicationGuildCommands\(appId, guildId\)/);
+  assert.ok(
+    !source.includes('Routes.applicationCommands('),
+    'config commands must not be registered globally: they are guild-scoped',
+  );
+});

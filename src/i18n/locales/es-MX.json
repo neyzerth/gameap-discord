@@ -107,6 +107,7 @@
     "rconRejected": "Comando rechazado: no se permiten saltos de línea ni \";\".",
     "rconSent": "Comando RCON enviado (sin salida).",
     "rconFailed": "RCON falló: {message}",
+    "customInvalid": "Valor inválido para `{option}`.",
     "unknownCommand": "No conozco ningún comando llamado `{command}`. Prueba con `/help`.",
     "unknownLocale": "No conozco el idioma `{locale}`. Disponibles: {available}."
   },
