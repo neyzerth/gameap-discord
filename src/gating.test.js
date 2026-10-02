@@ -53,8 +53,9 @@ test('the information commands are never gated', () => {
 test('config commands always pass through the gate, the renderer and the panel', () => {
   const source = readFileSync(join(COMMANDS_DIR, '..', 'custom-commands.js'), 'utf8');
   assert.match(source, /guardOperator\(interaction, name\)/, 'the executor must gate on the command name');
-  assert.match(source, /renderTemplate\(target\.template, values\)/, 'the command must be rendered, never raw');
-  assert.match(source, /rconCommand\(serverId, rendered\.command\)/, 'only the rendered command reaches RCON');
+  assert.match(source, /renderAll\(target, values\)/, 'the command must be rendered, never raw');
+  assert.match(source, /renderTemplate\(template, values\)/, 'every template of a pipeline is sanitized');
+  assert.match(source, /rconCommand\(serverId, command\)/, 'only the rendered command reaches RCON');
 });
 
 test('config commands are registered per guild, never globally', () => {

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 const { __setConfig } = await import('./config.js');
 const {
   __setCustomCommands, buildData, customCommandsFor, guildCommand, placeholders,
-  renderTemplate, targetFor, validateDefinition,
+  renderAll, renderTemplate, targetFor, templatesOf, validateDefinition,
 } = await import('./custom-commands.js');
 
 const SERVERS = { 9: { alias: 'mod-server', label: 'Mod Server', announce: false } };
@@ -72,6 +72,74 @@ test('renderTemplate refuses an over-long command', () => {
 test('placeholders lists every template hole', () => {
   assert.deepEqual(placeholders('a {x} b {y} {x}'), ['x', 'y', 'x']);
   assert.deepEqual(placeholders('no holes'), []);
+});
+
+test('templatesOf reads one template or a pipeline', () => {
+  assert.deepEqual(templatesOf({ template: 'say hi' }), ['say hi']);
+  assert.deepEqual(templatesOf({ templates: ['a', 'b'] }), ['a', 'b']);
+  assert.deepEqual(templatesOf({}), []);
+});
+
+test('renderAll renders a pipeline in order with the same arguments', () => {
+  const target = { templates: ['mod add {player}', 'mod reload'] };
+  assert.deepEqual(renderAll(target, { player: 'Steve' }), {
+    ok: true,
+    commands: ['mod add Steve', 'mod reload'],
+  });
+});
+
+test('renderAll stops at the first template it cannot render', () => {
+  const target = { templates: ['mod add {player}', 'mod mark {tag}'] };
+  const rendered = renderAll(target, { player: 'Steve' });
+  assert.equal(rendered.ok, false);
+  assert.deepEqual(rendered.missing, ['tag']);
+  assert.deepEqual(rendered.commands, ['mod add Steve'], 'what was rendered so far is kept');
+});
+
+test('renderAll sanitizes every template of the pipeline', () => {
+  const rendered = renderAll({ templates: ['mod add {player}', 'mod note {note}'] }, { player: 'Steve', note: 'a;b' });
+  assert.equal(rendered.ok, false);
+  assert.equal(rendered.reason, 'rejected');
+});
+
+test('a pipeline definition passes validation and shares its options', () => {
+  __setConfig(SERVERS, GUILDS);
+  const def = {
+    description: 'Add and reload',
+    server: '9',
+    subcommands: {
+      add: {
+        description: 'Add a player',
+        templates: ['whitelistgate add {player}', 'whitelistgate reload'],
+        options: [{ name: 'player', type: 'string', required: true, description: 'Player', source: 'players' }],
+      },
+    },
+  };
+  assert.deepEqual(validateDefinition('whitelistgate', def, []), []);
+
+  // A hole that only the second template uses still needs its option.
+  const missingOption = structuredClone(def);
+  missingOption.subcommands.add.templates = ['whitelistgate add {player}', 'whitelistgate mark {tag}'];
+  assert.match(validateDefinition('whitelistgate', missingOption, []).join(' '), /uses \{tag\} but no option/);
+
+  // template and templates are alternatives, never both.
+  const both = structuredClone(def);
+  both.subcommands.add.template = 'whitelistgate reload';
+  assert.match(validateDefinition('whitelistgate', both, []).join(' '), /use template or templates, not both/);
+
+  const empty = structuredClone(def);
+  empty.subcommands.add.templates = [];
+  assert.match(validateDefinition('whitelistgate', empty, []).join(' '), /template \(or templates\) is required/);
+
+  const notAnArray = structuredClone(def);
+  notAnArray.subcommands.add.templates = 'whitelistgate reload';
+  assert.match(validateDefinition('whitelistgate', notAnArray, []).join(' '), /templates must be an array/);
+
+  const blank = structuredClone(def);
+  blank.subcommands.add.templates = ['whitelistgate add {player}', '  '];
+  assert.match(validateDefinition('whitelistgate', blank, []).join(' '), /non-empty string/);
+
+  restore();
 });
 
 test('a usable definition passes validation', () => {
