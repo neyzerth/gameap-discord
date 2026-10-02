@@ -64,9 +64,9 @@ Quien tenga el flag **Administrator** de Discord pasa todo chequeo (útil para e
 Con `"adminBypass": false` en ese guild los roles vuelven a ser obligatorios, admins incluidos.
 
 En el cliente, los comandos con guard solo se **muestran** a quien puede ejecutarlos: se registran
-ocultos (`default_member_permissions: "0"`) y `npm run sync:permissions` le da a cada guild los roles
-de su config. Detalle y el paso del sync:
-[operations.md](operations.md#visibilidad-permisos-por-defecto-más-overrides).
+ocultos (`default_member_permissions: "0"`) y cada guild da los roles de su config en
+*Server Settings → Integrations → la app → Manage*; `npm run check:permissions` audita el desfase.
+Detalle y la auditoría: [operations.md](operations.md).
 
 Referencia de campos, herencia desde `defaults` y ejemplo completo:
 [configuration.md](configuration.md#configguildsjson).

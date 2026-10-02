@@ -23,7 +23,7 @@
   "scripts": {
     "start": "node src/index.js",
     "deploy": "node --env-file=.env src/deploy-commands.js",
-    "sync:permissions": "node --env-file=.env src/sync-permissions.js",
+    "check:permissions": "node --env-file=.env src/check-permissions.js",
     "test": "node --test src/*.test.js src/i18n/*.test.js",
     "check:docs": "node scripts/check-docs.mjs"
   },

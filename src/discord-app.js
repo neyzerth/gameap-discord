@@ -1,6 +1,6 @@
 // The application id is resolved from the token (authoritative) instead of
 // trusting DISCORD_APP_ID, which is easy to confuse with the guild id.
-// Shared by src/deploy-commands.js and src/sync-permissions.js.
+// Shared by src/deploy-commands.js and src/check-permissions.js.
 
 import { Routes } from 'discord.js';
 

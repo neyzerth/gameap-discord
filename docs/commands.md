@@ -64,8 +64,9 @@ A member holding Discord's **Administrator** flag passes every check (useful for
 `"adminBypass": false` in that guild makes the roles mandatory again, admins included.
 
 In the client the gated commands are only **shown** to members who can run them: they are registered
-hidden (`default_member_permissions: "0"`) and `npm run sync:permissions` gives each guild the roles
-of its config. Details and the sync step: [operations.md](operations.md#visibility-default-permissions-plus-overwrites).
+hidden (`default_member_permissions: "0"`) and each guild grants the roles of its config in
+*Server Settings → Integrations → the app → Manage*; `npm run check:permissions` audits the drift.
+Details and the audit: [operations.md](operations.md).
 
 Field reference, inheritance from `defaults` and a complete example:
 [configuration.md](configuration.md#configguildsjson).

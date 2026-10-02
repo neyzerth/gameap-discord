@@ -47,7 +47,7 @@ cp config/guilds.example.json  config/guilds.json     # guilds, feed channel, op
 
 npm install
 npm run deploy                                        # register the slash commands (global)
-npm run sync:permissions                              # grant each guild its roles
+npm run check:permissions                            # read-only: what each guild still has to grant
 docker compose pull && docker compose up -d           # the published image
 docker logs -f gameap-bot                             # "logged in as ... — N guild(s)"
 ```

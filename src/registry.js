@@ -12,8 +12,9 @@ export const COMMANDS_DIR = join(here, 'commands');
 // (`/rcon`, `/feed`, `/autostop`, `/language`) or via runControl()
 // (`/start`, `/stop`, `/restart`), both in src/control.js. Two things follow
 // from this list: the deploy hides them from non-admins
-// (`default_member_permissions: "0"`) and `src/sync-permissions.js` grants each
-// guild the roles its `commandRoles` / `operatorRoleIds` say.
+// (`default_member_permissions: "0"`) and `src/check-permissions.js` reports,
+// per guild, the roles its `commandRoles` / `operatorRoleIds` should be granted
+// in Discord (the bot cannot write command permissions itself).
 //
 // src/gating.test.js checks this list against the sources that actually call the
 // guard, so a new gated command cannot silently stay visible or un-synced.
@@ -31,7 +32,8 @@ export const isGated = (name) => GATED_COMMANDS.includes(name);
 
 // REST body for the command registration. The gated commands are hidden from
 // everyone without the Administrator flag (`default_member_permissions: "0"`);
-// the per-guild roles come back through `npm run sync:permissions`.
+// each guild's roles are granted by hand in Discord and audited with
+// `npm run check:permissions`.
 export function deployBody(commands) {
   return [...commands.values()].map((mod) => {
     const json = mod.data.toJSON();

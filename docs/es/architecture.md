@@ -59,7 +59,7 @@ Responsabilidades, en una línea cada una:
 | `src/i18n/` | Catálogos de idiomas (`locales/*.json`) y la API de traducción: `t()`, `plural()`, resolución por guild, localizaciones de Discord |
 | `src/help.js` | Ayuda general y por comando, generada desde los comandos vivos |
 | `src/logger.js` | Log con niveles (`LOG_LEVEL`), sin secretos |
-| `src/sync-permissions.js` | Escribe en Discord los permisos por guild (`npm run sync:permissions`); `src/deploy-commands.js` los registra ocultos (`src/discord-app.js` resuelve el app id) |
+| `src/check-permissions.js` | Auditoría **solo lectura** de los permisos por guild contra la config (`npm run check:permissions`). Discord rechaza esas escrituras desde un bot, así que los da un admin en el cliente; `src/deploy-commands.js` registra los comandos con guard ocultos (`src/discord-app.js` resuelve el app id) |
 
 Todo el texto que ve el usuario está localizado y el idioma es **por guild de Discord**: primero el
 override de `/language` (`data/locale.json`), luego la entrada del guild en `guilds.json`, luego los

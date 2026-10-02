@@ -59,7 +59,7 @@ Responsibilities, one line each:
 | `src/i18n/` | Locale catalogs (`locales/*.json`) and the translation API: `t()`, `plural()`, per-guild resolution, Discord localizations |
 | `src/help.js` | General and per-command help, generated from the live commands |
 | `src/logger.js` | Log with levels (`LOG_LEVEL`), no secrets |
-| `src/sync-permissions.js` | Writes the per-guild command permissions to Discord (`npm run sync:permissions`); `src/deploy-commands.js` registers them hidden (`src/discord-app.js` resolves the app id) |
+| `src/check-permissions.js` | **Read-only** audit of the per-guild grants against the config (`npm run check:permissions`). Discord refuses those writes from a bot, so a guild admin grants them in the client; `src/deploy-commands.js` registers the gated commands hidden (`src/discord-app.js` resolves the app id) |
 
 All user-facing text is localized and the language is **per Discord guild**: the `/language`
 override (`data/locale.json`) wins, then the guild's entry in `guilds.json`, then `defaults`, then

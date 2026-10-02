@@ -10,7 +10,7 @@
 ```bash
 npm test                  # 96 tests, no network or Discord
 npm run deploy            # registers the global commands (needs .env)
-npm run sync:permissions  # grants each guild its roles (needs .env; --dry-run first)
+npm run check:permissions  # read-only: what each guild still has to grant (needs .env)
 npm start                  # run the bot outside Docker (needs .env in the environment)
 docker compose pull && docker compose up -d   # the published image (local build: see below)
 ```
@@ -24,8 +24,8 @@ src/
   config.js          multi-guild resolution (alias, visibility, feed, overrides)
   permissions.js     isOperator(member, command) from commandRoles / operatorRoleIds (+ Administrator bypass)
   command-permissions.js  pure Discord-side overwrites for the gated commands
-  sync-permissions.js     writes those overwrites per guild (npm run sync:permissions)
-  discord-app.js     resolves the application id from the token (deploy + sync)
+  check-permissions.js    read-only audit of the per-guild grants (npm run check:permissions)
+  discord-app.js     resolves the application id from the token (deploy + check)
   gameap.js          panel HTTP client (15 s timeout)
   watcher.js         polling cycle and announce decision
   autostop.js        pure idle clock (resolveAutoStop, accumulateIdle, evaluateIdle)
