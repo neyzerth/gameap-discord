@@ -26,15 +26,35 @@ export function overwritesFor(guildId, commandName) {
   return ids.map((id) => ({ id: String(id), type: ROLE, permission: true }));
 }
 
-// What a guild should allow for a command vs what Discord reports for it.
-// `actual` is the API's own array: [{ id, type, permission }], where `permission`
-// false means explicitly denied (not an allow).
-export function compare(guildId, commandName, actual = []) {
-  const want = overwritesFor(guildId, commandName).map((p) => String(p.id));
-  const have = (Array.isArray(actual) ? actual : [])
+// Allowed ids in an API permissions array: `permission` false is an explicit
+// deny, not an allow.
+export function allowsIds(actual = []) {
+  return (Array.isArray(actual) ? actual : [])
     .filter((p) => p?.permission)
     .map((p) => String(p.id));
-  const missing = want.filter((id) => !have.includes(id));
-  const extra = have.filter((id) => !want.includes(id));
-  return { ok: missing.length === 0 && extra.length === 0, want, have, missing, extra };
+}
+
+// Discord stores the app-level entry (the "Manage" screen for the whole app)
+// under the application id, and it applies to every command, so it is merged
+// with the command's own entry.
+export function actualFor(rows, appId, commandId) {
+  const list = Array.isArray(rows) ? rows : [];
+  const entry = (id) =>
+    list.find((row) => String(row?.id) === String(id))?.permissions ?? [];
+  return [...entry(appId), ...entry(commandId)];
+}
+
+// What a guild should allow for a command vs what Discord reports for it.
+//
+// A top-level @everyone allow is a legitimate way to make the command visible to
+// the whole guild — that is what the "Manage" screen does by default — and then
+// the roles are enforced by the bot, not by Discord. It counts as ok, flagged
+// with `everyone: true` so the report can say so.
+export function compare(guildId, commandName, actual = []) {
+  const want = overwritesFor(guildId, commandName).map((p) => String(p.id));
+  const have = allowsIds(actual);
+  const everyone = have.includes(String(guildId));
+  const extra = have.filter((id) => !want.includes(id) && id !== String(guildId));
+  const missing = want.filter((id) => !have.includes(id) && !everyone);
+  return { ok: extra.length === 0 && (everyone || missing.length === 0), want, have, everyone, missing, extra };
 }

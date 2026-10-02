@@ -21,7 +21,7 @@
 
 import { REST, Routes } from 'discord.js';
 import { GATED_COMMANDS, loadCommands } from './registry.js';
-import { compare } from './command-permissions.js';
+import { actualFor, compare } from './command-permissions.js';
 import { resolveAppId } from './discord-app.js';
 
 const { DISCORD_TOKEN } = process.env;
@@ -51,7 +51,6 @@ for (const guild of guilds) {
   const rows = await rest
     .get(Routes.guildApplicationCommandsPermissions(appId, guild.id))
     .catch(() => []);
-  const actual = new Map(rows.map((row) => [row.id, row.permissions]));
 
   for (const name of gated) {
     const cmd = byName.get(name);
@@ -68,11 +67,14 @@ for (const guild of guilds) {
       continue;
     }
 
-    const verdict = compare(guild.id, name, actual.get(cmd.id) ?? []);
+    const verdict = compare(guild.id, name, actualFor(rows, appId, cmd.id));
     const name_ = (id) => (id === String(guild.id) ? '@everyone' : id);
 
     if (verdict.ok) {
-      console.log(`ok ${where}  allow ${verdict.want.map(name_).join(', ') || '(nobody)'}`);
+      const who = verdict.everyone
+        ? '@everyone (visible to all; the bot enforces the roles)'
+        : verdict.want.map(name_).join(', ') || '(nobody)';
+      console.log(`ok ${where}  allow ${who}`);
       continue;
     }
 

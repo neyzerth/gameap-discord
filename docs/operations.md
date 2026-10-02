@@ -22,7 +22,7 @@ cp .env.example .env && chmod 600 .env     # and fill in DISCORD_TOKEN + GAMEAP_
 cp config/servers.example.json config/servers.json    # and edit the real alias/label/ids
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 96 tests, must pass before deploying
+npm test                                   # 104 tests, must pass before deploying
 npm run deploy                             # registers the GLOBAL commands (gated ones hidden)
 npm run check:permissions                  # read-only audit: what each guild still has to grant
 docker compose pull && docker compose up -d
@@ -144,9 +144,10 @@ token, so the audit is automatic:
 npm run check:permissions     # read-only: config vs Discord, guild by guild
 ```
 
-It exits non-zero while a guild is missing something, and prints the exact ids to grant. The gated
-commands stay hidden for non-admins until each guild does that one step — Discord has no API for it
-that a bot may call.
+It exits non-zero while a guild is missing something, and prints the exact ids to grant. A top-level
+`@everyone` entry counts as *ok*: it is the simplest way to make the commands visible to the whole
+guild, and who may actually run them is the bot's gate, not Discord. The gated commands stay hidden
+for non-admins until each guild does that one step — Discord has no API for it that a bot may call.
 
 ## Credentials
 
@@ -285,7 +286,7 @@ configured locale (`guilds.json` → `DEFAULT_LOCALE` → `en`).
 
 ## Checklist after any change
 
-- [ ] `npm test` green (96 tests)
+- [ ] `npm test` green (104 tests)
 - [ ] `docker logs --tail 10` without `ERROR`, with `loaded 11 commands` and `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` at 0
 - [ ] A real command tested (`/servers` and `/players <server>`)

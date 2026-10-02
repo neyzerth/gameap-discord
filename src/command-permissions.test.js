@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const { __setConfig } = await import('./config.js');
-const { overwritesFor, compare, ROLE } = await import('./command-permissions.js');
+const { overwritesFor, compare, allowsIds, actualFor, ROLE } = await import('./command-permissions.js');
 
 const SERVERS = { 8: { alias: 'mc-survival' } };
 
@@ -93,4 +93,46 @@ test('an explicit deny is not an allow', () => {
   assert.equal(verdict.have.length, 0);
   assert.deepEqual(verdict.missing, ['role-op']);
   restore();
+});
+
+test('a top-level @everyone allow counts as ok: the bot enforces the roles', () => {
+  __setConfig(SERVERS, {
+    defaults: {},
+    guilds: { g1: { operatorRoleIds: ['role-op'], commandRoles: { rcon: ['role-admin'] } } },
+  });
+  const verdict = compare('g1', 'rcon', [{ id: 'g1', type: ROLE, permission: true }]);
+  assert.equal(verdict.everyone, true);
+  assert.equal(verdict.ok, true);
+  assert.deepEqual(verdict.missing, [], 'nobody is missing: everyone can see it');
+  assert.deepEqual(verdict.extra, [], '@everyone is never held against the config');
+  restore();
+});
+
+test('an unrelated extra grant is still reported next to @everyone', () => {
+  __setConfig(SERVERS, { defaults: {}, guilds: { g1: { operatorRoleIds: ['role-op'] } } });
+  const verdict = compare('g1', 'start', [
+    { id: 'g1', type: ROLE, permission: true },
+    { id: 'role-random', type: ROLE, permission: true },
+  ]);
+  assert.equal(verdict.ok, false);
+  assert.deepEqual(verdict.extra, ['role-random']);
+  restore();
+});
+
+test('allowsIds ignores denies and tolerates a missing array', () => {
+  assert.deepEqual(allowsIds([{ id: 'a', permission: true }, { id: 'b', permission: false }]), ['a']);
+  assert.deepEqual(allowsIds(undefined), []);
+});
+
+test('actualFor merges the app-level entry into every command', () => {
+  const rows = [
+    { id: 'app', permissions: [{ id: 'g1', type: ROLE, permission: true }] },
+    { id: 'cmd-rcon', permissions: [{ id: 'role-admin', type: ROLE, permission: true }] },
+  ];
+  assert.deepEqual(actualFor(rows, 'app', 'cmd-start'), [{ id: 'g1', type: ROLE, permission: true }]);
+  assert.deepEqual(actualFor(rows, 'app', 'cmd-rcon'), [
+    { id: 'g1', type: ROLE, permission: true },
+    { id: 'role-admin', type: ROLE, permission: true },
+  ]);
+  assert.deepEqual(actualFor([], 'app', 'cmd-rcon'), []);
 });
