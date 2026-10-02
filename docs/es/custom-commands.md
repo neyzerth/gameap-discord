@@ -48,6 +48,7 @@ guild usa seguido.
 | `hidden` | `true` → se registra oculto para los que no son admins (`default_member_permissions` `"0"`) |
 | `subcommands` | Mapa de subcomando → `{ "description", "template", "options" }`. Si lo omites, pon `template` + `options` arriba para un comando sin subcomandos |
 | `template` | La línea de RCON, con huecos `{opción}`. Sin saltos de línea y sin `;` |
+| `templates` | Un pipeline: varias líneas de RCON enviadas en orden con los mismos argumentos (agregar y luego recargar). Úsalo **o** `template`, nunca los dos |
 | `options[]` | `name`, `type` (`string`, `integer`, `boolean`), `description`, `required`, `source` (`"players"` autocompleta los jugadores en línea), `pattern`, `min`, `max` |
 
 ## Registro
@@ -75,6 +76,8 @@ dar los roles a mano; `npm run check:permissions` audita solo los incluidos con 
 - El template es lo único que llega a RCON, y recibe argumentos tipados — nunca texto libre.
 - Se rechazan argumentos vacíos, saltos de línea y `;`, los valores se recortan y el comando
   renderizado se topa en 512 caracteres: las mismas reglas que aplica `/rcon`.
+- Un pipeline (`templates`) corre en orden y se detiene en el primer fallo; la respuesta dice cuál
+  línea falló, así que una acción a medias nunca queda en silencio.
 - `pattern` valida un valor antes de renderizarlo.
 - Cada ejecución queda en el log con el comando, el servidor destino y quién lo corrió.
 

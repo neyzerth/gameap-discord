@@ -47,6 +47,7 @@ typing the whole `/rcon` line, an operator runs `/modcommand add player: Steve` 
 | `hidden` | `true` → registered hidden from non-admins (`default_member_permissions` `"0"`) |
 | `subcommands` | Map of subcommand → `{ "description", "template", "options" }`. Leave it out and put `template` + `options` at the top level for a command without subcommands |
 | `template` | The RCON line, with `{option}` holes. No line breaks and no `;` |
+| `templates` | A pipeline: several RCON lines sent in order with the same arguments (add and then reload). Use it **or** `template`, never both |
 | `options[]` | `name`, `type` (`string`, `integer`, `boolean`), `description`, `required`, `source` (`"players"` autocompletes the players online), `pattern`, `min`, `max` |
 
 ## Registration
@@ -73,6 +74,8 @@ grant the roles by hand instead; `npm run check:permissions` audits only the gat
 - The template is the only thing that reaches RCON, and it takes typed arguments — never free text.
 - Empty arguments, line breaks and `;` are refused, values are trimmed, and the rendered command is
   capped at 512 characters: the same rules `/rcon` applies.
+- A pipeline (`templates`) runs in order and stops at the first failure; the reply names the line
+  that failed, so a half-done action is never silent.
 - `pattern` validates a value before it is rendered.
 - Every run is logged with the command, the target server and who ran it.
 

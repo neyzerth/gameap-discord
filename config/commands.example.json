@@ -9,7 +9,7 @@
         "subcommands": {
           "<subcommand>": {
             "description": "What this subcommand does",
-            "template": "modcommand sub {player}",
+            "templates": ["modcommand sub {player}", "modcommand reload"],
             "options": [
               {
                 "name": "player",
