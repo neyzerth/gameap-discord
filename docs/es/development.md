@@ -10,7 +10,7 @@
 ```bash
 npm test                  # 96 tests, sin red ni Discord
 npm run deploy            # registra los comandos globales (necesita .env)
-npm run sync:permissions  # da a cada guild sus roles (necesita .env; --dry-run primero)
+npm run check:permissions  # solo lectura: qué le falta dar a cada guild (necesita .env)
 npm start                 # correr el bot fuera de Docker (necesita .env en el entorno)
 docker compose pull && docker compose up -d   # la imagen publicada (build local: ver abajo)
 ```
@@ -24,8 +24,8 @@ src/
   config.js          resolución multi-guild (alias, visibilidad, feed, overrides)
   permissions.js     isOperator(member, comando) desde commandRoles / operatorRoleIds (+ bypass de Administrator)
   command-permissions.js  overrides puros del lado de Discord para los comandos con guard
-  sync-permissions.js     escribe esos overrides por guild (npm run sync:permissions)
-  discord-app.js     resuelve el application id del token (deploy + sync)
+  check-permissions.js    auditoría solo lectura de los permisos por guild (npm run check:permissions)
+  discord-app.js     resuelve el application id del token (deploy + check)
   gameap.js          cliente HTTP del panel (timeout 15 s)
   watcher.js         ciclo de polling y decisión de anunciar
   autostop.js        reloj de inactividad puro (resolveAutoStop, accumulateIdle, evaluateIdle)

@@ -23,9 +23,8 @@ cp config/servers.example.json config/servers.json    # and edit the real alias/
 cp config/guilds.example.json  config/guilds.json
 npm install
 npm test                                   # 96 tests, must pass before deploying
-npm run deploy                             # registers the GLOBAL commands
-npm run sync:permissions -- --dry-run      # print what each guild would get, then run it for real
-npm run sync:permissions                   # grants each guild the roles of its config
+npm run deploy                             # registers the GLOBAL commands (gated ones hidden)
+npm run check:permissions                  # read-only audit: what each guild still has to grant
 docker compose pull && docker compose up -d
 docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
@@ -57,11 +56,11 @@ If you touched `src/commands/` (name, description, or options), **also**:
 
 ```bash
 npm run deploy
-npm run sync:permissions
+npm run check:permissions
 ```
 
-`npm run deploy` re-registers everything, and the gated commands go back to hidden from non-admins
-until the sync runs again.
+`deploy` re-registers the gated commands hidden; the checker (read-only) tells you what each guild
+still has to grant in the client.
 
 ## Using the published image
 
@@ -121,17 +120,33 @@ curl -X PUT "https://discord.com/api/v10/applications/<APP_ID>/guilds/<GUILD_ID>
 Globals are changed with `npm run deploy`. If the client shows old or duplicated commands,
 `Ctrl+R` in Discord clears the local cache.
 
-### Visibility: default permissions plus overwrites
+### Visibility: `default_member_permissions` plus the guild's own grants
 
 `default_member_permissions` only takes permission bits, so a role id cannot be expressed in the
-command definition. The gated commands are therefore registered with **`"0"`** — hidden from every
-member without the Administrator flag — and `npm run sync:permissions` writes the roles back as
-per-guild, per-command `allow` overwrites, read from each guild's `commandRoles` / `operatorRoleIds`.
-A guild with no roles configured gets an explicit `@everyone` allow, so "anyone may operate" keeps
-meaning anyone. Run it with `--dry-run` to print what it would grant, without touching Discord.
+command definition; per-guild, per-command permission overwrites are the only place it can live — and
+**the bot cannot write them**:
 
-The commands stay hidden for non-admins until the sync runs, which is why it belongs right after
-`npm run deploy`.
+```text
+PUT /applications/<app>/guilds/<guild>/commands/<command>/permissions
+-> 403 {"message":"Bots cannot use this endpoint","code":20001}
+```
+
+That endpoint wants a user token with the `applications.commands.permissions.update` scope, so the
+grants are made in the client by an admin of each guild:
+
+    Server Settings → Integrations → <the app> → Manage
+
+One entry at the top applies to every command of the app; each command can be unsynced for finer
+control (that is where a role that should only run `/rcon` goes). Reading *does* work with the bot
+token, so the audit is automatic:
+
+```bash
+npm run check:permissions     # read-only: config vs Discord, guild by guild
+```
+
+It exits non-zero while a guild is missing something, and prints the exact ids to grant. The gated
+commands stay hidden for non-admins until each guild does that one step — Discord has no API for it
+that a bot may call.
 
 ## Credentials
 
@@ -160,7 +175,11 @@ and the panel PAT must be created with **only** the 6 required abilities.
    out and **anyone** in that guild can. See [configuration.md](configuration.md#configguildsjson).
 
 4. `docker compose restart gameap-bot` and check for `— 2 guild(s)` in the log.
-5. Real test: inject a fake player in `data/state.json` and restart (see
+5. Grant the gated commands in that guild: *Server Settings → Integrations → the app → Manage*, one
+   entry for the roles of `operatorRoleIds` / `commandRoles` (or `@everyone` if you left them empty).
+   Without this step only the admins see `/start /stop /restart /rcon /feed /autostop /language`.
+6. `npm run check:permissions` — it lists, per guild, what is still missing.
+7. Real test: inject a fake player in `data/state.json` and restart (see
    [development.md](development.md#testing-the-feed-without-real-players)).
 
 ## Adding a game server
@@ -193,7 +212,7 @@ server off (`server 8 is offline; skipping poll`).
 | `DISCORD_TOKEN is required` / `GAMEAP_TOKEN is required` | `.env` missing the variable (or a bad env_file) | Fill `.env`, `docker compose up -d` |
 | `Command failed` on all commands | PAT without abilities, or panel down | `curl /api/servers` with the PAT; check abilities |
 | Commands don't show up in Discord | Global registration hasn't propagated | `Ctrl+R`; `/help` in a channel; verify `npm run deploy` |
-| A gated command doesn't show up for a member | The sync hasn't run for that guild, or the member holds none of the listed roles | `npm run sync:permissions`; check `commandRoles` / `operatorRoleIds` (admins always see it) |
+| A gated command doesn't show up for a member | That guild hasn't granted the roles yet, or the member holds none of them | `npm run check:permissions`; grant them in Server Settings → Integrations (admins always see it) |
 | Duplicated commands appear | Global + per-guild registration, or app with *user install* | Clear the per-guild set (above) and disable user install in the portal; `Ctrl+R` |
 | The feed never publishes | No `announce: true`, no `feedTarget()`, or `unsupported` | `docker logs` (look for `baseline server`), `/feed <server> on` |
 | `could not announce to <id>` | Bot lacks permissions in that channel | Grant View Channel + Send Messages + Embed Links |
@@ -271,3 +290,4 @@ configured locale (`guilds.json` → `DEFAULT_LOCALE` → `en`).
 - [ ] `docker inspect ... RestartCount` at 0
 - [ ] A real command tested (`/servers` and `/players <server>`)
 - [ ] If you touched the feed: inject a fake player and see the notice in the right channel
+- [ ] If you deployed: `npm run check:permissions` without pending rows

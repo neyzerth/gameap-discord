@@ -4,9 +4,11 @@
 //   node --env-file=.env src/deploy-commands.js --guild ID -> instant, single guild
 //
 // The gated commands (registry.js GATED_COMMANDS) are registered with
-// `default_member_permissions: "0"`: Discord hides them from every member
-// without the Administrator flag, and `npm run sync:permissions` grants each
-// guild the roles its config says. Until that sync runs, only admins see them.
+// `default_member_permissions: "0"`: Discord hides them from every member without
+// the Administrator flag. A guild admin then grants that guild the roles of its
+// config in Server Settings -> Integrations -> the app -> Manage, because the bot
+// cannot write command permissions (the API answers 403 for bot tokens).
+// `npm run check:permissions` reports what each guild is missing.
 
 import { REST, Routes } from 'discord.js';
 import { deployBody, loadCommands } from './registry.js';
@@ -49,7 +51,8 @@ console.log(
 );
 if (result.some((c) => c.default_member_permissions === '0')) {
   console.log(
-    'Gated commands are hidden from every non-admin until each guild gets its roles:\n' +
-      '  npm run sync:permissions',
+    'The gated commands are hidden from every non-admin. Each guild grants its roles in\n' +
+      'Discord (Server Settings -> Integrations -> the app -> Manage); check the drift with:\n' +
+      '  npm run check:permissions',
   );
 }

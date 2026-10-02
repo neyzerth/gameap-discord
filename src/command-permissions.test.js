@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const { __setConfig } = await import('./config.js');
-const { overwritesFor, ROLE } = await import('./command-permissions.js');
+const { overwritesFor, compare, ROLE } = await import('./command-permissions.js');
 
 const SERVERS = { 8: { alias: 'mc-survival' } };
 
@@ -55,5 +55,42 @@ test('numeric ids are sent as strings', () => {
 test('defaults apply to a guild with no block of its own', () => {
   __setConfig(SERVERS, { defaults: { commandRoles: { rcon: ['role-default'] } }, guilds: { g9: {} } });
   assert.deepEqual(overwritesFor('g9', 'rcon'), [{ id: 'role-default', type: ROLE, permission: true }]);
+  restore();
+});
+
+test('compare is ok when Discord already allows exactly the configured roles', () => {
+  __setConfig(SERVERS, { defaults: {}, guilds: { g1: { operatorRoleIds: ['role-op'] } } });
+  const verdict = compare('g1', 'start', [{ id: 'role-op', type: ROLE, permission: true }]);
+  assert.equal(verdict.ok, true);
+  assert.deepEqual(verdict.missing, []);
+  assert.deepEqual(verdict.extra, []);
+  restore();
+});
+
+test('compare reports the missing grants the guild admin has to add', () => {
+  restore(); // g1 is unrestricted: it needs @everyone, whose id is the guild id
+  const verdict = compare('g1', 'start', []);
+  assert.equal(verdict.ok, false);
+  assert.deepEqual(verdict.want, ['g1']);
+  assert.deepEqual(verdict.missing, ['g1']);
+});
+
+test('compare flags grants that the config does not ask for', () => {
+  __setConfig(SERVERS, { defaults: {}, guilds: { g1: { operatorRoleIds: ['role-op'] } } });
+  const verdict = compare('g1', 'start', [
+    { id: 'role-op', type: ROLE, permission: true },
+    { id: 'role-extra', type: ROLE, permission: true },
+  ]);
+  assert.equal(verdict.ok, false);
+  assert.deepEqual(verdict.extra, ['role-extra']);
+  assert.deepEqual(verdict.missing, []);
+  restore();
+});
+
+test('an explicit deny is not an allow', () => {
+  __setConfig(SERVERS, { defaults: {}, guilds: { g1: { operatorRoleIds: ['role-op'] } } });
+  const verdict = compare('g1', 'start', [{ id: 'role-op', type: ROLE, permission: false }]);
+  assert.equal(verdict.have.length, 0);
+  assert.deepEqual(verdict.missing, ['role-op']);
   restore();
 });

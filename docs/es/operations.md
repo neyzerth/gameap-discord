@@ -23,9 +23,8 @@ cp config/servers.example.json config/servers.json    # y editar alias/label/ids
 cp config/guilds.example.json  config/guilds.json
 npm install
 npm test                                   # 96 tests, deben pasar antes de desplegar
-npm run deploy                             # registra los comandos GLOBALES
-npm run sync:permissions -- --dry-run      # imprime lo que recibiría cada guild, luego córrelo en serio
-npm run sync:permissions                   # da a cada guild los roles de su config
+npm run deploy                             # registra los comandos GLOBALES (los gated quedan ocultos)
+npm run check:permissions                  # auditoría solo lectura: qué le falta dar a cada guild
 docker compose pull && docker compose up -d
 docker logs -f gameap-bot                  # "loaded 11 commands" + "logged in as ... — N guild(s)"
 ```
@@ -57,11 +56,11 @@ Si tocaste `src/commands/` (nombre, descripción u opciones), **además**:
 
 ```bash
 npm run deploy
-npm run sync:permissions
+npm run check:permissions
 ```
 
-`npm run deploy` vuelve a registrar todo, y los comandos con guard quedan ocultos para los que no son
-admins hasta que corras el sync otra vez.
+`deploy` vuelve a registrar los comandos con guard ocultos; el checker (solo lectura) te dice qué le
+falta dar a cada guild desde el cliente.
 
 ## Usar la imagen publicada
 
@@ -122,17 +121,33 @@ curl -X PUT "https://discord.com/api/v10/applications/<APP_ID>/guilds/<GUILD_ID>
 Los globales se cambian con `npm run deploy`. Si el cliente muestra comandos viejos o duplicados,
 `Ctrl+R` en Discord limpia la caché local.
 
-### Visibilidad: permisos por defecto más overrides
+### Visibilidad: `default_member_permissions` más los permisos del propio guild
 
 `default_member_permissions` solo acepta bits de permiso, así que un id de rol no se puede expresar en
-la definición del comando. Por eso los comandos con guard se registran con **`"0"`** — ocultos para
-todo miembro sin el flag Administrator — y `npm run sync:permissions` devuelve los roles como
-overrides `allow` por guild y por comando, leídos de `commandRoles` / `operatorRoleIds` de cada guild.
-Un guild sin roles configurados recibe un `@everyone` permitido explícito, así que "cualquiera puede
-operar" sigue significando cualquiera. Córrelo con `--dry-run` para ver qué daría, sin tocar Discord.
+la definición del comando; los overrides de permisos por guild y por comando son el único sitio donde
+cabe — y **el bot no puede escribirlos**:
 
-Los comandos quedan ocultos para los que no son admins hasta que corra el sync, por eso va justo
-después de `npm run deploy`.
+```text
+PUT /applications/<app>/guilds/<guild>/commands/<command>/permissions
+-> 403 {"message":"Bots cannot use this endpoint","code":20001}
+```
+
+Ese endpoint pide un token de **usuario** con el scope `applications.commands.permissions.update`, así
+que los permisos los da un admin de cada guild desde el cliente:
+
+    Server Settings → Integrations → <la app> → Manage
+
+Una entrada arriba del todo aplica a todos los comandos de la app; cada comando se puede "unsync" para
+control más fino (ahí va el rol que solo debería usar `/rcon`). Leer **sí** funciona con el token del
+bot, así que la auditoría es automática:
+
+```bash
+npm run check:permissions     # solo lectura: config vs Discord, guild por guild
+```
+
+Sale con código distinto de cero mientras a un guild le falte algo, e imprime los ids exactos que hay
+que dar. Los comandos con guard quedan ocultos para los que no son admins hasta que cada guild haga
+ese paso — Discord no tiene API para hacerlo desde un bot.
 
 ## Credenciales
 
@@ -161,7 +176,11 @@ del panel se debe crear con **solo** las 6 abilities necesarias.
    pones ninguno, **cualquiera** de ese guild puede. Ver [configuration.md](configuration.md#configguildsjson).
 
 4. `docker compose restart gameap-bot` y verificar `— 2 guild(s)` en el log.
-5. Prueba real: inyectar un jugador ficticio en `data/state.json` y reiniciar (ver
+5. Dar los comandos con guard en ese guild: *Server Settings → Integrations → la app → Manage*, una
+   entrada con los roles de `operatorRoleIds` / `commandRoles` (o `@everyone` si los dejaste vacíos).
+   Sin este paso, solo los admins ven `/start /stop /restart /rcon /feed /autostop /language`.
+6. `npm run check:permissions` — lista, por guild, lo que sigue faltando.
+7. Prueba real: inyectar un jugador ficticio en `data/state.json` y reiniciar (ver
    [development.md](development.md#probar-el-feed-sin-jugadores-reales)).
 
 ## Añadir un game server
@@ -194,7 +213,7 @@ apagado (`server 8 is offline; skipping poll`).
 | `DISCORD_TOKEN is required` / `GAMEAP_TOKEN is required` | `.env` sin la variable (o env_file mal) | Rellenar `.env`, `docker compose up -d` |
 | `Command failed` en todos los comandos | PAT sin abilities o panel caído | `curl /api/servers` con el PAT; revisar abilities |
 | Los comandos no aparecen en Discord | Registro global sin propagar | `Ctrl+R`; `/help` en un canal; verificar `npm run deploy` |
-| Un comando con guard no aparece para un miembro | No corrió el sync para ese guild, o el miembro no tiene ninguno de los roles listados | `npm run sync:permissions`; revisar `commandRoles` / `operatorRoleIds` (los admins siempre lo ven) |
+| Un comando con guard no aparece para un miembro | Ese guild aún no dio los roles, o el miembro no tiene ninguno | `npm run check:permissions`; darlos en Server Settings → Integrations (los admins siempre lo ven) |
 | Aparecen comandos **duplicados** | Registro global + por guild, o app con *user install* | Vaciar el set por guild (arriba) y desactivar user install en el portal; `Ctrl+R` |
 | El feed nunca publica | Sin `announce: true`, sin `feedTarget()`, o `unsupported` | `docker logs` (busca `baseline server`), `/feed <server> on` |
 | `could not announce to <id>` | El bot sin permisos en ese canal | Dar View Channel + Send Messages + Embed Links |
@@ -271,3 +290,4 @@ solo cuesta un baseline silencioso (state) o los overrides de runtime (`/feed`, 
 - [ ] `docker inspect ... RestartCount` en 0
 - [ ] Un comando real probado (`/servers` y `/players <server>`)
 - [ ] Si tocaste el feed: inyectar un jugador ficticio y ver el aviso en el canal correcto
+- [ ] Si desplegaste: `npm run check:permissions` sin filas pendientes
