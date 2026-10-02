@@ -94,7 +94,7 @@ Servers outside this file **do not exist** for the bot (they don't show up in `/
 | `operatorRoleIds` | `[]` | `[]` → **anyone** can use the control commands, unless `commandRoles` narrows one (current setup: trusted friends). With ids → only those holding one of those roles |
 | `commandRoles` | `{}` | Roles **per command**: `{ "<command>": ["<role id>"] }`. It **replaces** `operatorRoleIds` for that command (it can be narrower or wider). An empty list means "not set" and inherits `operatorRoleIds` |
 | `adminBypass` | `true` | `true` → a member with Discord's Administrator flag skips every role check. `false` → the roles are mandatory even for admins |
-| `servers` | `null` | `null` → sees all from `servers.json`. With a list → only those ids |
+| `servers` | `null` | `null` → sees all from `servers.json`. With a list → only those ids. It is also the allowlist for the **feed**: a server outside it never announces in that guild |
 | `feedChannelId` | `null` | Default feed channel for that guild |
 | `feeds` | `{}` | Per-server specific channel: `{ "<serverId>": "<channelId>" }` |
 | `locale` | `null` | Language for this guild: `en`, `es-MX` or any BCP-47 tag (a regional variant like `es-AR` is served by its language catalog, `es-MX`). `null` → inherits `defaults.locale` (see [Locale resolution](#locale-resolution)) |

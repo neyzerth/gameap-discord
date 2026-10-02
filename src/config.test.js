@@ -65,6 +65,39 @@ test('runtime /feed override can enable another server and pick a channel', () =
   setOverrides({});
 });
 
+test('a guild only receives the feed of the servers it can see', () => {
+  __setConfig(
+    { 8: { announce: true }, 2: { announce: true } },
+    {
+      defaults: {},
+      guilds: {
+        g1: { servers: ['8'], feedChannelId: 'chan' },
+        g2: { servers: null, feedChannelId: 'chan2' },
+      },
+    },
+  );
+  setOverrides({});
+
+  assert.equal(feedTarget('g1', '8'), 'chan');
+  assert.equal(feedTarget('g1', '2'), null, 'server 2 is not in the g1 allowlist');
+  assert.equal(feedTarget('g2', '2'), 'chan2', 'g2 sees every server');
+
+  setOverrides({});
+  __setConfig(SERVERS, GUILDS);
+});
+
+test('an override cannot force a feed for a server the guild cannot see', () => {
+  __setConfig(
+    { 2: { announce: false } },
+    { defaults: {}, guilds: { g1: { servers: ['8'], feedChannelId: 'chan' } } },
+  );
+  setOverrides({ 'g1:2': { on: true, channelId: 'chan-x' } });
+  assert.equal(feedTarget('g1', '2'), null);
+
+  setOverrides({});
+  __setConfig(SERVERS, GUILDS);
+});
+
 test('poll targets are the servers flagged with announce', () => {
   setAutoStopOverrides({});
   assert.deepEqual(pollTargets(), ['8']);

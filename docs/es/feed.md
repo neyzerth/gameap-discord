@@ -11,6 +11,12 @@ Cada `POLL_INTERVAL_MS` (20 s por defecto) el watcher recorre los servidores de 
 (los que tienen `announce: true` en `config/servers.json`), **una sola vez por servidor**,
 independientemente de cuántos canales lo estén mirando.
 
+**Quién recibe el aviso**: solo los guilds que pueden *ver* ese game server. `servers` en
+`config/guilds.json` es la única allowlist — un guild que no lista el servidor no recibe nada, aunque
+tenga `feedChannelId` (y `/feed` rechazaría ese servidor igual, porque resuelve por la misma lista).
+Dentro de un guild que sí lo ve, el canal es el override de `/feed` → `feeds[<servidor>]` →
+`feedChannelId`.
+
 ```mermaid
 sequenceDiagram
   participant W as watcher (cada 20 s)

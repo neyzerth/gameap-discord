@@ -97,7 +97,7 @@ autocompletado, y no se pueden usar en ningún comando).
 | `operatorRoleIds` | `[]` | `[]` → **cualquiera** puede usar los comandos de control, salvo que `commandRoles` restrinja alguno (setup actual de amigos de confianza). Con ids → solo quien tenga uno de esos roles |
 | `commandRoles` | `{}` | Roles **por comando**: `{ "<comando>": ["<id rol>"] }`. **Reemplaza** a `operatorRoleIds` en ese comando (puede ser más chico o más amplio). Una lista vacía significa "no definido" y hereda `operatorRoleIds` |
 | `adminBypass` | `true` | `true` → quien tenga el flag Administrator de Discord salta todo chequeo de roles. `false` → los roles son obligatorios incluso para admins |
-| `servers` | `null` | `null` → ve todos los de `servers.json`. Con lista → solo esos ids |
+| `servers` | `null` | `null` → ve todos los de `servers.json`. Con lista → solo esos ids. También es la allowlist del **feed**: un servidor fuera de ella nunca anuncia en ese guild |
 | `feedChannelId` | `null` | Canal por defecto del feed para ese guild |
 | `feeds` | `{}` | Canal específico por servidor: `{ "<serverId>": "<channelId>" }` |
 | `locale` | `null` | Idioma de este guild: `en`, `es-MX` o cualquier tag BCP-47 (una variante regional como `es-AR` la sirve el catálogo de su idioma, `es-MX`). `null` → hereda `defaults.locale` (ver [Resolución del idioma](#resolución-del-idioma)) |

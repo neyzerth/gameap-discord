@@ -8,6 +8,8 @@ The feed is the only part of the bot that does **not** respond to a command: a b
 
 Every `POLL_INTERVAL_MS` (20 s by default) the watcher polls the servers from `pollTargets()` (those with `announce: true` in `config/servers.json`), **once per server**, regardless of how many channels are watching it.
 
+**Who receives a notice**: only the guilds that can *see* that game server. `servers` in `config/guilds.json` is the single allowlist — a guild that does not list the server gets nothing, even when it has a `feedChannelId` (and `/feed` would refuse that server anyway, since it resolves through the same list). Inside a guild that does see it, the channel is the runtime `/feed` override → `feeds[<server>]` → `feedChannelId`.
+
 ```mermaid
 sequenceDiagram
   participant W as watcher (every 20 s)

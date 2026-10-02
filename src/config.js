@@ -137,8 +137,15 @@ export function isAnnounceOn(guildId, serverId) {
 
 // Which channel (if any) this server announces to, inside this guild.
 // Resolution order: runtime override channel -> guild feeds[server] -> guild feedChannelId
+//
+// A guild only receives the feed of a server it can see: `servers` is the single
+// allowlist for "this guild knows about that server". Without this check any
+// guild with a `feedChannelId` would receive every `announce` server's feed —
+// including servers it cannot use, and that it cannot silence with `/feed`
+// either, because that command resolves the server through the same allowlist.
 export function feedTarget(guildId, serverId) {
   ensure();
+  if (!canUseServer(guildId, serverId)) return null;
   if (!isAnnounceOn(guildId, serverId)) return null;
 
   const cfg = guildConfig(guildId);
