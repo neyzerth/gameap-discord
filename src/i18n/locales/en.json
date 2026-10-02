@@ -107,6 +107,7 @@
     "rconRejected": "Command rejected: line breaks and \";\" are not allowed.",
     "rconSent": "RCON command sent (no output).",
     "rconFailed": "RCON failed: {message}",
+    "customInvalid": "Invalid value for `{option}`.",
     "unknownCommand": "I do not know a command called `{command}`. Try `/help`.",
     "unknownLocale": "I do not know the language `{locale}`. Available: {available}."
   },
