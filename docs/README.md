@@ -48,6 +48,7 @@ flowchart LR
 |---|---|
 | [architecture.md](architecture.md) | How the pieces connect, the flow of a command and of the watcher, and **why** each design decision was made |
 | [commands.md](commands.md) | The 11 commands: options, permissions, which embed they return and which errors they can raise |
+| [custom-commands.md](custom-commands.md) | Extra per-guild commands defined in config/commands.json, one RCON command each |
 | [configuration.md](configuration.md) | Environment variables and the config/state JSON files, with the exact feed precedence |
 | [feed.md](feed.md) | How the watcher detects joins/leaves and how it avoids false announcements |
 | [autostop.md](autostop.md) | The idle auto-stop (2 h with no players), how to configure it and how to test it safely |

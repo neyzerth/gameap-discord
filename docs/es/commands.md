@@ -71,6 +71,10 @@ Detalle y la auditoría: [operations.md](operations.md).
 Referencia de campos, herencia desde `defaults` y ejemplo completo:
 [configuration.md](configuration.md#configguildsjson).
 
+Los comandos de config (`config/commands.json`) pasan por la misma resolución con su propio nombre,
+así que `commandRoles.<comando>` puede restringir uno de ellos sin tocar el resto:
+[custom-commands.md](custom-commands.md).
+
 ## Información
 
 ### `/servers`

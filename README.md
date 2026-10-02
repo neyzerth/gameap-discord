@@ -93,6 +93,7 @@ Full docs live in [`docs/`](docs/README.md) (English, the source of truth) and a
 |---|---|
 | [architecture.md](docs/architecture.md) | How the pieces connect and why each decision was made |
 | [commands.md](docs/commands.md) | The 11 commands and their errors |
+| [custom-commands.md](docs/custom-commands.md) | Extra per-guild commands from `config/commands.json` (RCON shortcuts) |
 | [configuration.md](docs/configuration.md) | `.env`, the JSON files and the feed precedence |
 | [feed.md](docs/feed.md) | The watcher and its anti-spam rules |
 | [autostop.md](docs/autostop.md) | Idle auto-shutdown (`/autostop`) and dry-run mode |
