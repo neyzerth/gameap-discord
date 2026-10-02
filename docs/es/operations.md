@@ -22,7 +22,7 @@ cp .env.example .env && chmod 600 .env     # y rellenar DISCORD_TOKEN + GAMEAP_T
 cp config/servers.example.json config/servers.json    # y editar alias/label/ids reales
 cp config/guilds.example.json  config/guilds.json
 npm install
-npm test                                   # 104 tests, deben pasar antes de desplegar
+npm test                                   # 106 tests, deben pasar antes de desplegar
 npm run deploy                             # registra los comandos GLOBALES (los gated quedan ocultos)
 npm run check:permissions                  # auditoría solo lectura: qué le falta dar a cada guild
 docker compose pull && docker compose up -d
@@ -287,7 +287,7 @@ solo cuesta un baseline silencioso (state) o los overrides de runtime (`/feed`, 
 
 ## Checklist después de cualquier cambio
 
-- [ ] `npm test` en verde (104 tests)
+- [ ] `npm test` en verde (106 tests)
 - [ ] `docker logs --tail 10` sin `ERROR`, con `loaded 11 commands` y `— N guild(s)`
 - [ ] `docker inspect ... RestartCount` en 0
 - [ ] Un comando real probado (`/servers` y `/players <server>`)
