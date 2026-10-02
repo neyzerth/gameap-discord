@@ -6,6 +6,7 @@ npm-debug.log*
 # Real configuration is local: the repo only ships the *.example.json templates.
 config/servers.json
 config/guilds.json
+config/commands.json
 
 # Machine-specific patterns for the leak check of `npm run check:docs`.
 .docs-leaks
