@@ -17,6 +17,9 @@ un jugador.
   de juego y el firewall puede seguir cerrado.
 - **Feed de jugadores** — un sondeo anuncia entradas y salidas en el canal que elijas, con reglas que
   evitan avisos falsos.
+- **Vigilante de energía opcional** — si el host tiene UPS, el bot avisa en el juego y en Discord
+  cuando se va la luz y apaga el servidor limpio al llegar a batería baja
+  ([docs/es/power.md](docs/es/power.md)).
 - **Un bot, varios servidores** — varios guilds de Discord con sus propios canales, roles operadores
   **por comando** y game servers visibles, todo configurado en JSON.
 
@@ -99,6 +102,7 @@ en [`docs/es/`](docs/es/README.md) (este idioma).
 | [configuration.md](docs/es/configuration.md) | `.env`, los JSON y la precedencia del feed |
 | [feed.md](docs/es/feed.md) | El watcher y sus reglas anti-spam |
 | [autostop.md](docs/es/autostop.md) | Auto-apagado por inactividad (`/autostop`) y modo dry-run |
+| [power.md](docs/es/power.md) | Opcional: avisos en el juego y en Discord cuando el UPS entra en batería |
 | [gameap-api.md](docs/es/gameap-api.md) | Endpoints del panel y abilities del PAT |
 | [operations.md](docs/es/operations.md) | Desplegar, rotar credenciales, troubleshooting |
 | [development.md](docs/es/development.md) | Mapa del código, tests, cómo añadir un comando |
