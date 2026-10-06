@@ -230,5 +230,36 @@
       "title": "📣 Feed de entradas y salidas",
       "body": "El bot revisa la lista de jugadores cada ~20 s y publica \"entró\"/\"salió\" en el canal del feed.\n`/feed <server> off` lo silencia **en el canal donde ejecutas el comando**; `/feed <server> on` lo reactiva.\nSi un servidor está apagado no se anuncia nada (sin falsos \"todos salieron\")."
     }
+  },
+  "power": {
+    "outage": {
+      "title": "⚡ Se fue la luz",
+      "body": "El homeserver pasó a batería. **{server}** sigue en línea; si la luz no vuelve se apagará solo.",
+      "charge": "Batería",
+      "runtime": "Autonomía"
+    },
+    "low": {
+      "title": "🔋 Batería baja — apagado inminente",
+      "body": "{server} se está apagando ahora."
+    },
+    "restored": {
+      "title": "✅ Volvió la luz",
+      "body": "Corte de **{duration}**. El server sigue arriba.",
+      "bodyStopped": "Corte de **{duration}**. El server quedó apagado: prendanlo con `/start {alias}`."
+    },
+    "dryRun": "PRUEBA — no se mandó nada al juego ni se detuvo el server",
+    "game": {
+      "outage": {
+        "title": "Se fue la luz",
+        "subtitle": "El server sigue con batería",
+        "headline": "Se fue la luz en la casa.",
+        "body": "El server sigue funcionando con batería. Si no vuelve pronto, se apagará solo: guarda lo que estés haciendo."
+      },
+      "low": {
+        "title": "Batería baja",
+        "headline": "Batería baja.",
+        "body": "El server se apagará en unos segundos. Atentos al Discord cuando se reactive."
+      }
+    }
   }
 }
