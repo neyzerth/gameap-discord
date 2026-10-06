@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "nut": {
+    "host": "127.0.0.1",
+    "port": 3493,
+    "ups": "myups",
+    "timeoutMs": 3000
+  },
+  "pollMs": 10000,
+  "servers": ["1"],
+  "channels": {
+    "123456789012345678": "234567890123456789"
+  },
+  "notifyEveryoneOnLowBattery": true,
+  "stopServersOnLowBattery": true,
+  "stopDelayMs": 5000
+}

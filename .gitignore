@@ -7,6 +7,7 @@ npm-debug.log*
 config/servers.json
 config/guilds.json
 config/commands.json
+config/power.json
 
 # Machine-specific patterns for the leak check of `npm run check:docs`.
 .docs-leaks
