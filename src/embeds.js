@@ -2,6 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import { feedTarget, localeFor, serverMeta } from './config.js';
 import { t, plural, supportedTags } from './i18n/index.js';
 import { formatDuration } from './autostop.js';
+import { formatOutage } from './power.js';
 import { log } from './logger.js';
 
 const COLOR = { online: 0x57f287, offline: 0x99aab5, warn: 0xfee75c, error: 0xed4245, info: 0x5865f2 };
@@ -296,4 +297,67 @@ export async function announcePlayers(client, guildId, serverId, changes, total)
     .setTimestamp();
 
   return sendToChannel(client, channelId, embed);
+}
+
+// --- Corte de energía (UPS vía NUT) ----------------------------------------------
+//
+// Tres avisos, uno por etapa del UPS: se fue la luz (OB), batería baja (LB) y volvió
+// la luz (OL). El de batería baja es el único que puede llevar ping.
+
+export function powerOutageEmbed(locale, { label, charge = null, runtime = null }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.warn)
+    .setTitle(t(locale, 'power.outage.title'))
+    .setDescription(t(locale, 'power.outage.body', { server: label }))
+    .addFields(
+      { name: t(locale, 'power.outage.charge'), value: charge == null ? '—' : `${charge}%`, inline: true },
+      { name: t(locale, 'power.outage.runtime'), value: runtime ?? '—', inline: true },
+    )
+    .setTimestamp();
+}
+
+export function powerLowEmbed(locale, { label }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.error)
+    .setTitle(t(locale, 'power.low.title'))
+    .setDescription(t(locale, 'power.low.body', { server: label }))
+    .setTimestamp();
+}
+
+export function powerRestoredEmbed(locale, { duration, alias, stopped = false }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.online)
+    .setTitle(t(locale, 'power.restored.title'))
+    .setDescription(
+      stopped
+        ? t(locale, 'power.restored.bodyStopped', { duration, alias })
+        : t(locale, 'power.restored.body', { duration }),
+    )
+    .setTimestamp();
+}
+
+// Payload del aviso. El ping es opt-in por evento y `allowedMentions` va explícito:
+// sin él, cualquier texto (o un nombre de jugador) podría mencionar a todos.
+export function powerMessage(embed, { mention = null } = {}) {
+  const content = mention ? String(mention).trim() : '';
+  return {
+    ...(content ? { content } : {}),
+    embeds: [embed],
+    allowedMentions: content ? { parse: ['everyone', 'roles', 'users'] } : { parse: [] },
+  };
+}
+
+export async function announcePower(client, channelId, embed, options = {}) {
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel?.isTextBased()) {
+      log.warn(`power channel ${channelId} is not text based`);
+      return false;
+    }
+    await channel.send(powerMessage(embed, options));
+    return true;
+  } catch (err) {
+    log.warn(`could not announce the power notice to ${channelId}: ${err.message}`);
+    return false;
+  }
 }
