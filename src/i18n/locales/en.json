@@ -230,5 +230,36 @@
       "title": "📣 Join/leave feed",
       "body": "A watcher checks the player list every ~20 s and posts \"joined\"/\"left\" in the feed channel.\n`/feed <server> off` silences it **in the channel where you run the command**; `/feed <server> on` brings it back.\nIf a server is stopped, nothing is announced (no fake \"everyone left\" bursts)."
     }
+  },
+  "power": {
+    "outage": {
+      "title": "⚡ Mains power lost",
+      "body": "The homeserver switched to battery. **{server}** is still online; if the mains do not come back it will shut down by itself.",
+      "charge": "Battery",
+      "runtime": "Runtime"
+    },
+    "low": {
+      "title": "🔋 Low battery — shutdown imminent",
+      "body": "{server} is shutting down now."
+    },
+    "restored": {
+      "title": "✅ Mains power is back",
+      "body": "Outage of **{duration}**. The server is still up.",
+      "bodyStopped": "Outage of **{duration}**. The server was stopped: start it again with `/start {alias}`."
+    },
+    "dryRun": "DRY RUN — nothing was sent to the game and nothing was stopped",
+    "game": {
+      "outage": {
+        "title": "Mains power lost",
+        "subtitle": "Running on battery",
+        "headline": "Mains power was lost.",
+        "body": "The server keeps running on battery. If the mains do not come back soon it will shut down by itself — save what you are doing."
+      },
+      "low": {
+        "title": "Low battery",
+        "headline": "Low battery.",
+        "body": "The server will shut down in a few seconds. Watch Discord for when it comes back."
+      }
+    }
   }
 }

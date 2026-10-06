@@ -1,5 +1,6 @@
 import { Client, GatewayIntentBits, Events, MessageFlags } from 'discord.js';
 import { startWatcher } from './watcher.js';
+import { startPowerWatch } from './power-watch.js';
 import { loadCommands } from './registry.js';
 import { guildCommand, registerGuildCommands } from './custom-commands.js';
 import { resolveAppId } from './discord-app.js';
@@ -68,6 +69,8 @@ async function main() {
   client.once(readyEvent, () => {
     log.info(`logged in as ${client.user.tag} — ${client.guilds.cache.size} guild(s)`);
     startWatcher(client);
+    // No-op unless config/power.json enables it (see docs/power.md).
+    startPowerWatch(client);
 
     // Config commands are registered per guild, which is instant (no global
     // propagation) and keeps them scoped. Failure here must not stop the bot.

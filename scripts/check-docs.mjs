@@ -147,7 +147,7 @@ const all = [
   join(ROOT, 'README.es.md'),
   ...en.map((f) => join(EN_DIR, f)),
   ...es.map((f) => join(ES_DIR, f)),
-  ...['servers.example.json', 'guilds.example.json'].map((f) => join(ROOT, 'config', f)),
+  ...['servers.example.json', 'guilds.example.json', 'power.example.json'].map((f) => join(ROOT, 'config', f)),
 ].filter(existsSync);
 
 all.forEach(checkLinks);

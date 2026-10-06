@@ -52,6 +52,7 @@ flowchart LR
 | [configuration.md](configuration.md) | Environment variables and the config/state JSON files, with the exact feed precedence |
 | [feed.md](feed.md) | How the watcher detects joins/leaves and how it avoids false announcements |
 | [autostop.md](autostop.md) | The idle auto-stop (2 h with no players), how to configure it and how to test it safely |
+| [power.md](power.md) | Optional: in-game and Discord warnings when the UPS goes on battery, and the low-battery shutdown |
 | [gameap-api.md](gameap-api.md) | Panel endpoints the bot uses, the PAT abilities it needs and its error handling |
 | [operations.md](operations.md) | Deploy, update, rotate credentials, step-by-step troubleshooting |
 | [development.md](development.md) | Code map, how to add a command, how to run the tests |

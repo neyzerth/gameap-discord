@@ -3,10 +3,14 @@
 
 import { readFileSync } from 'node:fs';
 import { resolveAutoStop } from './autostop.js';
+import { normalizePowerConfig } from './power.js';
 import { BASE_LOCALE, canonicalTag, isSupported } from './i18n/index.js';
 
 const SERVERS_FILE = () => process.env.SERVERS_FILE ?? './config/servers.json';
 const GUILDS_FILE = () => process.env.GUILDS_FILE ?? './config/guilds.json';
+// Optional on purpose: without this file (or with `enabled: false`) the power
+// watch never starts and the bot behaves exactly as before. See docs/power.md.
+const POWER_FILE = () => process.env.POWER_FILE ?? './config/power.json';
 
 let serversFile = null;
 let guildsFile = null;
@@ -21,6 +25,8 @@ function ensure() {
 export function reloadConfig() {
   serversFile = null;
   guildsFile = null;
+  powerFile = null;
+  powerSeen = false;
   ensure();
 }
 
@@ -84,6 +90,52 @@ export function localeSource(guildId) {
 export function autoStopConfig(serverId) {
   ensure();
   return resolveAutoStop(serverId, { servers: serversFile, overrides: autoStopOverrides });
+}
+
+// --- Corte de energía (opcional: ver docs/power.md) -------------------------------
+//
+// config/power.json es opcional: sin archivo (o con `enabled: false`) el vigilante
+// de energía nunca arranca y el bot se comporta igual que siempre.
+
+let powerFile = null;
+let powerSeen = false;
+
+function readPowerFile() {
+  if (!powerSeen) {
+    powerSeen = true;
+    try {
+      powerFile = JSON.parse(readFileSync(POWER_FILE(), 'utf8'));
+    } catch {
+      powerFile = null; // no file at all = feature off
+    }
+  }
+  return powerFile;
+}
+
+// Config normalizada, o null cuando la función está apagada o incompleta.
+export function powerConfig() {
+  return normalizePowerConfig(readPowerFile());
+}
+
+// El archivo crudo: permite distinguir "apagado" de "mal configurado" en los logs.
+export function powerConfigRaw() {
+  return readPowerFile();
+}
+
+// A dónde van los avisos de un servidor dentro de un guild: el mapeo explícito de
+// config/power.json o el canal del feed de ese guild. Un guild que no puede ver el
+// servidor no recibe nada (misma allowlist que los comandos y el feed).
+export function powerChannel(guildId, serverId) {
+  ensure();
+  if (!canUseServer(guildId, serverId)) return null;
+  const configured = readPowerFile()?.channels?.[String(guildId)];
+  return configured ? String(configured) : (guildConfig(guildId).feedChannelId ?? null);
+}
+
+// Test hook: igual que __setConfig, pero para la config de energía.
+export function __setPowerConfig(raw) {
+  powerFile = raw;
+  powerSeen = true;
 }
 
 export function allServers() {

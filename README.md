@@ -16,6 +16,8 @@ restart them, run RCON commands, and get a message in a channel every time a pla
   port and the firewall can stay closed.
 - **Player feed** — a poller announces joins and leaves in the channel you choose, with rules that
   keep false announcements out.
+- **Optional power watch** — if the host has a UPS, the bot warns in game and in Discord when the
+  mains fail and stops the server cleanly on low battery ([docs/power.md](docs/power.md)).
 - **One bot, many servers** — several Discord guilds with their own channels, **per-command** operator
   roles and visible game servers, all configured in JSON.
 
@@ -97,6 +99,7 @@ Full docs live in [`docs/`](docs/README.md) (English, the source of truth) and a
 | [configuration.md](docs/configuration.md) | `.env`, the JSON files and the feed precedence |
 | [feed.md](docs/feed.md) | The watcher and its anti-spam rules |
 | [autostop.md](docs/autostop.md) | Idle auto-shutdown (`/autostop`) and dry-run mode |
+| [power.md](docs/power.md) | Optional: in-game and Discord warnings when the UPS goes on battery |
 | [gameap-api.md](docs/gameap-api.md) | Panel endpoints and PAT abilities |
 | [operations.md](docs/operations.md) | Deploy, rotate credentials, troubleshooting |
 | [development.md](docs/development.md) | Code map, tests, adding a command |
