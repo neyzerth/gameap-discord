@@ -5,12 +5,14 @@ import net from 'node:net';
 import {
   EMOJI_RE,
   GAME_TEXT_KEYS,
+  RCON_MAX_BYTES,
   decidePower,
   formatOutage,
   newPowerState,
   normalizePowerConfig,
   parseUpsStatus,
   rconPipeline,
+  tellrawChunks,
 } from './power.js';
 import { parseListVars, parseVarLine, readUpsVars } from './nut.js';
 import { t } from './i18n/index.js';
@@ -136,27 +138,76 @@ test('POWER_DRY_RUN y los interruptores se respetan', () => {
 
 // --- rconPipeline -----------------------------------------------------------
 
-test('el pipeline del juego lleva title, tellraw y el save-all al final', () => {
+const chatLines = (lines) => lines.filter((line) => line.startsWith('tellraw @a '));
+const chatText = (lines) =>
+  chatLines(lines)
+    .flatMap((line) => JSON.parse(line.replace('tellraw @a ', '')).map((c) => c.text))
+    .join(' ');
+
+test('el pipeline del juego lleva title, el chat y el save-all al final', () => {
   const lines = rconPipeline('es-MX', 'outage');
   assert.equal(lines[0], 'title @a times 10 100 20');
   assert.match(lines[1], /^title @a title \{/);
   assert.match(lines[2], /^title @a subtitle \{/);
-  assert.match(lines[3], /^tellraw @a \[/);
-  assert.equal(lines[4], 'save-all flush');
+  assert.equal(lines.at(-1), 'save-all flush');
 
   // Los componentes deben ser JSON válido o el server rechaza el comando.
   JSON.parse(lines[1].replace('title @a title ', ''));
   JSON.parse(lines[2].replace('title @a subtitle ', ''));
-  JSON.parse(lines[3].replace('tellraw @a ', ''));
-  assert.match(lines[3], /Se fue la luz en la casa\./);
+  for (const line of chatLines(lines)) JSON.parse(line.replace('tellraw @a ', ''));
+
+  const said = chatText(lines);
+  assert.match(said, /Se fue la luz en la casa\./);
+  assert.match(said, /guarda lo que estés haciendo/);
+  // Cada línea del chat corta en fin de oración, no a media frase.
+  for (const line of chatLines(lines)) {
+    const chunk = JSON.parse(line.replace('tellraw @a ', '')).map((c) => c.text).join(' ');
+    assert.match(chunk, /[.:;!?]$/, `corte a media oración: ${chunk}`);
+  }
   assert.deepEqual(rconPipeline('es-MX', 'restored'), []);
 });
 
 test('la etapa 2 avisa que se apaga en segundos', () => {
   const lines = rconPipeline('es-MX', 'low');
   assert.match(lines[1], /Batería baja/);
-  assert.match(lines[2], /se apagará en unos segundos/);
+  assert.match(chatText(lines), /se apagará en unos segundos/);
   assert.equal(lines.at(-1), 'save-all flush');
+});
+
+// El panel rechaza comandos de más de 127 caracteres: este test es el que impide
+// volver a mandar un tellraw demasiado largo (pasó en la prueba real del 2026-10-06).
+test('ninguna línea del pipeline pasa del límite del panel (127 bytes)', () => {
+  for (const locale of ['en', 'es-MX']) {
+    for (const stage of ['outage', 'low']) {
+      for (const line of rconPipeline(locale, stage)) {
+        const bytes = Buffer.byteLength(line, 'utf8');
+        assert.ok(bytes <= RCON_MAX_BYTES, `${locale}/${stage}: ${bytes} bytes → ${line.slice(0, 60)}`);
+      }
+    }
+  }
+});
+
+test('un aviso largo se parte en varios tellraw sin perder palabras ni estilo', () => {
+  const long = 'palabra '.repeat(80).trim();
+  const lines = tellrawChunks([
+    { text: long, color: 'gold', bold: true },
+    { text: 'final del aviso', color: 'yellow' },
+  ]);
+
+  assert.ok(lines.length > 1, 'debe partirse en varias líneas');
+  for (const line of lines) {
+    assert.ok(Buffer.byteLength(line, 'utf8') <= RCON_MAX_BYTES, line);
+    JSON.parse(line.replace('tellraw @a ', ''));
+  }
+
+  const words = chatText(lines).split(/\s+/);
+  assert.equal(words.length, 83); // 80 + "final del aviso"
+  assert.equal(words[0], 'palabra');
+  assert.equal(words.slice(-3).join(' '), 'final del aviso');
+
+  const first = JSON.parse(lines[0].replace('tellraw @a ', ''));
+  assert.equal(first[0].color, 'gold');
+  assert.equal(first[0].bold, true);
 });
 
 test('los textos del juego no llevan emoji (Minecraft los pinta como tofu)', () => {
