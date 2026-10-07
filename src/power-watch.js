@@ -66,7 +66,10 @@ export function startPowerWatch(client) {
         await rconCommand(serverId, line);
       } catch (err) {
         // One failed line must not swallow the rest: the last line is the save.
-        log.warn(`power ${stage}: RCON on server ${serverId} failed (${err.status ?? 'net'} ${err.message})`);
+        log.warn(
+          `power ${stage}: RCON on server ${serverId} failed (${err.status ?? 'net'} ${err.message}) · ` +
+            `${Buffer.byteLength(line)} bytes: ${line.slice(0, 70)}`,
+        );
       }
     }
     log.info(`power ${stage}: in-game warning sent to server ${serverId}`);
