@@ -106,9 +106,11 @@ las líneas RCON exactas que saldrían.
 ### En el juego (RCON)
 
 A través del panel (`POST /api/servers/{id}/rcon`), así que no se abre ningún puerto del juego y el
-que habla RCON es el daemon. La etapa 1 manda un `title`, un `tellraw` y `save-all flush`; la etapa 2
-los repite sin el título grande. El texto vive en el catálogo i18n (por guild) y **no lleva emoji**:
-hay un test que falla si aparece uno.
+que habla RCON es el daemon. La etapa 1 manda un `title`, el mensaje del chat y `save-all flush`; la
+etapa 2 los repite sin el título grande. El panel rechaza comandos de más de **127 caracteres**, así
+que el mensaje del chat se parte en tantos `tellraw` como haga falta, y un test falla si alguna línea
+pasa del límite. El texto vive en el catálogo i18n (por guild) y **no lleva emoji**: hay un test que
+falla si aparece uno.
 
 ### En Discord
 

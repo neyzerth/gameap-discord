@@ -106,9 +106,11 @@ log shows the exact RCON lines that would go out.
 ### In game (RCON)
 
 Through the panel (`POST /api/servers/{id}/rcon`), so no game port is opened and the daemon speaks
-the RCON. Stage 1 sends a `title`, a `tellraw` and `save-all flush`; stage 2 repeats them without
-the big title. The text lives in the i18n catalog (per guild) and **carries no emoji**: there is a
-test that fails if one shows up.
+the RCON. Stage 1 sends a `title`, the chat message and `save-all flush`; stage 2 repeats them without
+the big title. The panel rejects commands longer than **127 characters**, so the chat message is split
+into as many `tellraw` lines as it needs, and a test fails if any line goes over that limit. The text
+lives in the i18n catalog (per guild) and **carries no emoji**: there is a test that fails if one
+shows up.
 
 ### In Discord
 
