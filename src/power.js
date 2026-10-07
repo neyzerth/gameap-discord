@@ -117,6 +117,88 @@ export function normalizePowerConfig(raw, env = process.env) {
   };
 }
 
+// El panel rechaza comandos RCON de más de 127 caracteres ("command must not exceed
+// 127 characters"), así que todo lo que sale por RCON tiene que caber ahí. Se mide en
+// bytes UTF-8 porque el panel cuenta bytes y los textos en español llevan acentos.
+export const RCON_MAX_BYTES = 127;
+
+const byteLength = (line) => Buffer.byteLength(line, 'utf8');
+
+const styleKey = (component) => JSON.stringify({ ...component, text: undefined });
+const sameStyle = (a, b) => styleKey(a) === JSON.stringify(b);
+const jsonBytes = (components, prefix) => byteLength(`${prefix}${JSON.stringify(components)}`);
+
+// Junta la unidad con el último componente si el estilo coincide (así el texto no se
+// parte en trozos del mismo color).
+const mergeInto = (current, { text, style }) => {
+  const last = current.at(-1);
+  if (last && sameStyle(last, style)) {
+    return [...current.slice(0, -1), { ...last, text: `${last.text} ${text}` }];
+  }
+  return [...current, { text, ...style }];
+};
+
+// Para una oración que no cabe ni sola: se parte por palabras.
+function packWords(words, limit, prefix) {
+  const groups = [];
+  let current = [];
+  for (const word of words) {
+    const merged = mergeInto(current, word);
+    if (current.length && jsonBytes(merged, prefix) > limit) {
+      groups.push(current);
+      current = [{ text: word.text, ...word.style }];
+    } else {
+      current = merged;
+    }
+    if (jsonBytes(current, prefix) > limit) {
+      groups.push(current);
+      current = [];
+    }
+  }
+  if (current.length) groups.push(current);
+  return groups;
+}
+
+// Parte los componentes en varios `tellraw` para que ningún comando pase del límite
+// del panel (un aviso largo devolvería un 400). Primero se corta por oraciones para
+// que cada línea del chat se lea completa, y una oración que no quepa sola se parte
+// por palabras. Se conservan el orden y el estilo.
+export function tellrawChunks(components, limit = RCON_MAX_BYTES) {
+  const prefix = 'tellraw @a ';
+  const sentences = [];
+  for (const component of components) {
+    const { text, ...style } = component;
+    for (const sentence of String(text).split(/(?<=[.!?:;])\s+/).filter(Boolean)) {
+      sentences.push({ text: sentence, style });
+    }
+  }
+
+  const chunks = [];
+  let current = [];
+  for (const sentence of sentences) {
+    const merged = mergeInto(current, sentence);
+    if (current.length && jsonBytes(merged, prefix) > limit) {
+      chunks.push(current);
+      current = [{ text: sentence.text, ...sentence.style }];
+    } else {
+      current = merged;
+    }
+
+    if (jsonBytes(current, prefix) > limit) {
+      // La oración no cabe sola: se parte por palabras (y no se pierde nada).
+      const words = current.flatMap((component) => {
+        const { text, ...style } = component;
+        return String(text).split(/\s+/).filter(Boolean).map((word) => ({ text: word, style }));
+      });
+      chunks.push(...packWords(words, limit, prefix));
+      current = [];
+    }
+  }
+  if (current.length) chunks.push(current);
+
+  return chunks.map((group) => `${prefix}${JSON.stringify(group)}`);
+}
+
 // The in-game announcement as RCON lines. tellraw/title take JSON text
 // components, so the texts go through JSON.stringify (the escaping stays right
 // even if the catalog gains quotes) and `save-all flush` closes the pipeline:
@@ -124,16 +206,18 @@ export function normalizePowerConfig(raw, env = process.env) {
 export function rconPipeline(locale, stage) {
   const times = 'title @a times 10 100 20';
   const save = 'save-all flush';
+  const title = (key, color) =>
+    `title @a title ${JSON.stringify({ text: t(locale, key), color, bold: true })}`;
 
   if (stage === 'outage') {
     return [
       times,
-      `title @a title ${JSON.stringify({ text: t(locale, 'power.game.outage.title'), color: 'gold', bold: true })}`,
+      title('power.game.outage.title', 'gold'),
       `title @a subtitle ${JSON.stringify({ text: t(locale, 'power.game.outage.subtitle'), color: 'yellow' })}`,
-      `tellraw @a ${JSON.stringify([
+      ...tellrawChunks([
         { text: t(locale, 'power.game.outage.headline'), color: 'gold', bold: true },
-        { text: ` ${t(locale, 'power.game.outage.body')}`, color: 'yellow' },
-      ])}`,
+        { text: t(locale, 'power.game.outage.body'), color: 'yellow' },
+      ]),
       save,
     ];
   }
@@ -141,11 +225,11 @@ export function rconPipeline(locale, stage) {
   if (stage === 'low') {
     return [
       times,
-      `title @a title ${JSON.stringify({ text: t(locale, 'power.game.low.title'), color: 'red', bold: true })}`,
-      `tellraw @a ${JSON.stringify([
+      title('power.game.low.title', 'red'),
+      ...tellrawChunks([
         { text: t(locale, 'power.game.low.headline'), color: 'red', bold: true },
-        { text: ` ${t(locale, 'power.game.low.body')}`, color: 'yellow' },
-      ])}`,
+        { text: t(locale, 'power.game.low.body'), color: 'yellow' },
+      ]),
       save,
     ];
   }
