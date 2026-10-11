@@ -242,6 +242,10 @@
       "title": "🔋 Low battery — shutdown imminent",
       "body": "{server} is shutting down now."
     },
+    "imminent": {
+      "title": "🔌 Outage still on — shutdown imminent",
+      "body": "{server} will shut down in about a minute to protect its data. The power is still out."
+    },
     "restored": {
       "title": "✅ Mains power is back",
       "body": "Outage of **{duration}**. The server is still up.",
@@ -259,6 +263,11 @@
         "title": "Low battery",
         "headline": "Low battery.",
         "body": "The server will shut down in a few seconds. Watch Discord for when it comes back."
+      },
+      "imminent": {
+        "title": "Shutdown imminent",
+        "headline": "The server is shutting down soon.",
+        "body": "The power is still out: the server will shut down in about a minute to protect itself. It will be back when the power returns."
       }
     }
   }
