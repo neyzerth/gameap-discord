@@ -5,6 +5,10 @@
 // watcher cycle can spend seconds talking to the panel, and the low-battery
 // window is short (the host shuts down a couple of minutes after LB).
 //
+// `imminentMs` (config) fires stage 2 after that much time on battery, for UPS
+// units whose charge meter lies — it can crash from ~90 % to 0 in seconds, and
+// waiting for `LB` would leave the players with no warning (or with none at all).
+//
 // The whole module is inert unless config/power.json exists and is enabled.
 
 import { readUpsVars } from './nut.js';
@@ -12,7 +16,7 @@ import { decidePower, formatOutage, parseUpsStatus, rconPipeline } from './power
 import { localeFor, powerChannel, powerConfig, powerConfigRaw, serverMeta } from './config.js';
 import { getState, save } from './state.js';
 import { isActive, rconCommand, serverStatus, stopServer } from './gameap.js';
-import { announcePower, powerLowEmbed, powerOutageEmbed, powerRestoredEmbed } from './embeds.js';
+import { announcePower, powerImminentEmbed, powerLowEmbed, powerOutageEmbed, powerRestoredEmbed } from './embeds.js';
 import { t } from './i18n/index.js';
 import { log } from './logger.js';
 
@@ -33,7 +37,9 @@ export function startPowerWatch(client) {
 
   log.info(
     `power watch on: ${cfg.nut.ups}@${cfg.nut.host}:${cfg.nut.port} every ${cfg.pollMs}ms · ` +
-      `servers ${cfg.servers.join(', ')}${cfg.dryRun ? ' · DRY RUN' : ''}`,
+      `servers ${cfg.servers.join(', ')}` +
+      `${cfg.imminentMs > 0 ? ` · imminent after ${cfg.imminentMs}ms on battery` : ''}` +
+      `${cfg.dryRun ? ' · DRY RUN' : ''}`,
   );
 
   const state = getState();
@@ -75,7 +81,7 @@ export function startPowerWatch(client) {
     log.info(`power ${stage}: in-game warning sent to server ${serverId}`);
   };
 
-  const stopServers = async (active) => {
+  const stopServers = async (active, stage) => {
     const stopped = [];
     for (const id of active) {
       if (cfg.dryRun) {
@@ -85,9 +91,9 @@ export function startPowerWatch(client) {
       try {
         const task = await stopServer(id);
         stopped.push(id);
-        log.info(`power low: stop sent to server ${id} (task ${task?.task_id})`);
+        log.info(`power ${stage}: stop sent to server ${id} (task ${task?.task_id})`);
       } catch (err) {
-        log.warn(`power low: could not stop server ${id}: ${err.message}`);
+        log.warn(`power ${stage}: could not stop server ${id}: ${err.message}`);
       }
     }
     return stopped;
@@ -116,26 +122,33 @@ export function startPowerWatch(client) {
     }
 
     for (const id of cfg.servers) {
+      const label = serverMeta(id).label ?? `#${id}`;
       for (const target of targetsFor(id)) {
         const embed =
           action === 'low'
-            ? powerLowEmbed(target.locale, { label: serverMeta(id).label ?? `#${id}` })
-            : powerOutageEmbed(target.locale, {
-                label: serverMeta(id).label ?? `#${id}`,
-                charge: state.power.charge ?? null,
-                runtime: state.power.runtime ?? null,
-              });
+            ? powerLowEmbed(target.locale, { label })
+            : action === 'imminent'
+              ? powerImminentEmbed(target.locale, { label })
+              : powerOutageEmbed(target.locale, {
+                  label,
+                  charge: state.power.charge ?? null,
+                  runtime: state.power.runtime ?? null,
+                });
         if (cfg.dryRun) embed.setFooter({ text: t(target.locale, 'power.dryRun') });
         await announcePower(client, target.channelId, embed, {
-          mention: action === 'low' && cfg.notifyEveryoneOnLowBattery ? cfg.lowBatteryMention : null,
+          mention:
+            (action === 'low' || action === 'imminent') && cfg.notifyEveryoneOnLowBattery
+              ? cfg.lowBatteryMention
+              : null,
         });
       }
     }
 
-    if (action === 'low' && cfg.stopServersOnLowBattery) {
+    // La etapa 2 (batería baja o tiempo en batería) además manda el stop del panel.
+    if ((action === 'low' || action === 'imminent') && cfg.stopServersOnLowBattery) {
       // A beat so the players can read the warning before the server goes down.
       await sleep(cfg.stopDelayMs);
-      const stopped = await stopServers(active);
+      const stopped = await stopServers(active, action);
       if (stopped.length) state.power.stoppedAt = Date.now();
     }
   };
@@ -159,7 +172,9 @@ export function startPowerWatch(client) {
 
       const status = parseUpsStatus(read.vars['ups.status']);
       const previous = state.power ?? null;
-      const { actions, state: next, durationMs, stopped } = decidePower(previous, status, Date.now());
+      const { actions, state: next, durationMs, stopped } = decidePower(previous, status, Date.now(), {
+        imminentMs: cfg.imminentMs,
+      });
 
       next.charge = read.vars['battery.charge'] ?? null;
       next.runtime = read.vars['battery.runtime'] ? formatOutage(Number(read.vars['battery.runtime']) * 1000) : null;
