@@ -18,8 +18,8 @@ un jugador.
 - **Feed de jugadores** — un sondeo anuncia entradas y salidas en el canal que elijas, con reglas que
   evitan avisos falsos.
 - **Vigilante de energía opcional** — si el host tiene UPS, el bot avisa en el juego y en Discord
-  cuando se va la luz y apaga el servidor limpio al llegar a batería baja
-  ([docs/es/power.md](docs/es/power.md)).
+  cuando se va la luz y apaga el servidor limpio al llegar a batería baja — o tras un tiempo
+  configurable en batería ([docs/es/power.md](docs/es/power.md)).
 - **Un bot, varios servidores** — varios guilds de Discord con sus propios canales, roles operadores
   **por comando** y game servers visibles, todo configurado en JSON.
 

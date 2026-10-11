@@ -25,6 +25,9 @@ export const GAME_TEXT_KEYS = [
   'power.game.low.title',
   'power.game.low.headline',
   'power.game.low.body',
+  'power.game.imminent.title',
+  'power.game.imminent.headline',
+  'power.game.imminent.body',
 ];
 
 export const EMOJI_RE = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/u;
@@ -51,7 +54,13 @@ export function parseUpsStatus(raw) {
 // first time the battery is low, 'restored' when the mains come back after an
 // episode. Going straight from online to low returns ['outage', 'low'] so the
 // players still get the warning before the shutdown.
-export function decidePower(prev, status, nowMs = Date.now()) {
+//
+// Stage 2 has a second, optional trigger: `imminentMs` spent on battery fires
+// 'imminent'. It exists for UPS units whose charge meter lies — it can crash from
+// ~90 % to 0 in seconds, and then `LB` arrives with no time left, or never does.
+// Time on battery does not lie: whichever of the two stage-2 triggers comes
+// first wins, and there is still only one stage 2 per episode.
+export function decidePower(prev, status, nowMs = Date.now(), { imminentMs = 0 } = {}) {
   const state = { ...newPowerState(), ...(prev ?? {}) };
 
   // A failed or ambiguous read must never turn into "the mains are gone".
@@ -71,13 +80,18 @@ export function decidePower(prev, status, nowMs = Date.now()) {
   state.obSince ??= nowMs;
 
   const actions = [];
-  if (!state.stage1At) {
+  if (state.stage1At == null) {
     actions.push('outage');
     state.stage1At = nowMs;
   }
-  if (status === LOW && !state.stage2At) {
-    actions.push('low');
-    state.stage2At = nowMs;
+  if (state.stage2At == null) {
+    if (status === LOW) {
+      actions.push('low');
+      state.stage2At = nowMs;
+    } else if (imminentMs > 0 && nowMs - state.obSince >= imminentMs) {
+      actions.push('imminent');
+      state.stage2At = nowMs;
+    }
   }
   return { actions, state, durationMs: 0, stopped: false };
 }
@@ -114,6 +128,7 @@ export function normalizePowerConfig(raw, env = process.env) {
     lowBatteryMention: String(raw.lowBatteryMention ?? '@everyone').trim(),
     stopServersOnLowBattery: raw.stopServersOnLowBattery !== false,
     stopDelayMs: clampMs(raw.stopDelayMs, 5000, 0, 30_000),
+    imminentMs: clampMs(raw.imminentOnBatteryMs, 0, 0, 3_600_000),
   };
 }
 
@@ -229,6 +244,18 @@ export function rconPipeline(locale, stage) {
       ...tellrawChunks([
         { text: t(locale, 'power.game.low.headline'), color: 'red', bold: true },
         { text: t(locale, 'power.game.low.body'), color: 'yellow' },
+      ]),
+      save,
+    ];
+  }
+
+  if (stage === 'imminent') {
+    return [
+      times,
+      title('power.game.imminent.title', 'red'),
+      ...tellrawChunks([
+        { text: t(locale, 'power.game.imminent.headline'), color: 'red', bold: true },
+        { text: t(locale, 'power.game.imminent.body'), color: 'yellow' },
       ]),
       save,
     ];

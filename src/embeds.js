@@ -324,6 +324,14 @@ export function powerLowEmbed(locale, { label }) {
     .setTimestamp();
 }
 
+export function powerImminentEmbed(locale, { label }) {
+  return new EmbedBuilder()
+    .setColor(COLOR.error)
+    .setTitle(t(locale, 'power.imminent.title'))
+    .setDescription(t(locale, 'power.imminent.body', { server: label }))
+    .setTimestamp();
+}
+
 export function powerRestoredEmbed(locale, { duration, alias, stopped = false }) {
   return new EmbedBuilder()
     .setColor(COLOR.online)

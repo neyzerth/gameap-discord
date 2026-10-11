@@ -242,6 +242,10 @@
       "title": "🔋 Batería baja — apagado inminente",
       "body": "{server} se está apagando ahora."
     },
+    "imminent": {
+      "title": "🔌 Sigue sin luz — apagado inminente",
+      "body": "{server} se apagará en aproximadamente un minuto para proteger sus datos. La luz no ha vuelto."
+    },
     "restored": {
       "title": "✅ Volvió la luz",
       "body": "Corte de **{duration}**. El server sigue arriba.",
@@ -259,6 +263,11 @@
         "title": "Batería baja",
         "headline": "Batería baja.",
         "body": "El server se apagará en unos segundos. Atentos al Discord cuando se reactive."
+      },
+      "imminent": {
+        "title": "Apagado inminente",
+        "headline": "El server se apagará en un momento.",
+        "body": "La luz no ha vuelto: el server se apagará en aproximadamente un minuto para protegerse. Vuelve cuando regrese la energía."
       }
     }
   }

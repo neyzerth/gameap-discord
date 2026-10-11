@@ -19,12 +19,18 @@ Es un temporizador aparte y no un paso del watcher de jugadores a propósito: el
 puede tardar segundos hablando con el panel, y la ventana de batería baja es corta (el host empieza
 a apagarse un par de minutos después de `LB`).
 
+La etapa 2 tiene dos gatillos posibles y gana el que llegue primero: la bandera `LB`, o — opcional,
+con `imminentOnBatteryMs` — simplemente llevar ese tiempo en batería. El segundo existe para UPS
+cuyo medidor de carga miente: hay baterías que se desploman de ~90 % a 0 en segundos, así que `LB`
+puede llegar sin tiempo o no llegar nunca.
+
 ```mermaid
 flowchart TD
   NUT["upsd 127.0.0.1:3493<br/>ups.status"] -->|cada pollMs| READ["leer las banderas"]
   READ -->|"OL"| RESTORE["regreso, si hubo corte"]
   READ -->|"OB"| STAGE1["etapa 1: aviso en el juego + embed en Discord"]
   READ -->|"OB LB"| STAGE2["etapa 2: ping, save-all y stop"]
+  READ -->|"OB >= imminentOnBatteryMs"| STAGE2
   READ -->|"ilegible"| SILENT["nada"]
   STAGE1 --> SAVE["save-all flush"]
   STAGE2 --> SAVE
@@ -39,6 +45,7 @@ minutos" mentiría en un parpadeo de 30 segundos, donde el host no se apaga.
 |---|---|
 | `OB` por primera vez en el episodio | Aviso en el juego (title + chat + `save-all flush`) y el embed en Discord, sin mención |
 | `LB` por primera vez en el episodio | Aviso en el juego, el embed **con la mención configurada** y el apagado por batería baja |
+| `OB` que llega a `imminentOnBatteryMs` sin `LB` | Igual que `LB`: etapa 2 por tiempo en batería, para unidades cuyo medidor se desploma sin llegar a `LB` |
 | `LB` como primera lectura | Las dos etapas, en orden |
 | Vuelve la luz tras un episodio | "Volvió la luz" con la duración real y si el servidor quedó apagado |
 | `OL` sin corte previo | Nada |
@@ -63,7 +70,8 @@ Cada etapa se anuncia **una vez por episodio**, y el episodio se cierra cuando v
   "notifyEveryoneOnLowBattery": true,
   "lowBatteryMention": "@everyone",
   "stopServersOnLowBattery": true,
-  "stopDelayMs": 5000
+  "stopDelayMs": 5000,
+  "imminentOnBatteryMs": 0
 }
 ```
 
@@ -80,15 +88,16 @@ Cada etapa se anuncia **una vez por episodio**, y el episodio se cierra cuando v
 | `lowBatteryMention` | `"@everyone"` | La mención en sí (una mención de rol también sirve) |
 | `stopServersOnLowBattery` | `true` | Manda el `stop` del panel en la etapa 2 |
 | `stopDelayMs` | `5000` | Pausa entre el aviso y ese `stop`, 0-30000 |
+| `imminentOnBatteryMs` | `0` | Dispara la etapa 2 tras ese tiempo en batería aunque no llegue `LB` (0-3600000); `0` lo desactiva |
 
 Sin `nut.ups` o sin `servers` el archivo se ignora, y el log dice por qué.
 
 ### Apagado por batería baja
 
-En la etapa 2 el bot avisa a los jugadores, espera `stopDelayMs` y manda
-`POST /api/servers/{id}/stop` por cada servidor de la lista que esté encendido, así el mundo queda
-guardado y el panel dice **stopped** en lugar de morir con el host. El servidor **no** se vuelve a
-prender solo: después del corte alguien tiene que usar `/start <server>`.
+En la etapa 2 — sin importar cuál gatillo la disparó — el bot avisa a los jugadores, espera
+`stopDelayMs` y manda `POST /api/servers/{id}/stop` por cada servidor de la lista que esté encendido,
+así el mundo queda guardado y el panel dice **stopped** en lugar de morir con el host. El servidor
+**no** se vuelve a prender solo: después del corte alguien tiene que usar `/start <server>`.
 
 ### Modo seguro (`POWER_DRY_RUN`)
 
@@ -117,7 +126,8 @@ falla si aparece uno.
 | Etapa | Título | Extra |
 |---|---|---|
 | 1 | ⚡ Se fue la luz | Batería `%` y autonomía como campos |
-| 2 | 🔋 Batería baja — apagado inminente | La mención configurada |
+| 2 (`LB`) | 🔋 Batería baja — apagado inminente | La mención configurada |
+| 2 (tiempo) | 🔌 Sigue sin luz — apagado inminente | La mención configurada (sale tras `imminentOnBatteryMs` en batería) |
 | Regreso | ✅ Volvió la luz | Duración, y cómo prender el servidor si quedó apagado |
 
 ## Estado en `data/state.json`
@@ -131,7 +141,8 @@ falla si aparece uno.
 ```
 
 - `obSince`: cuándo se fue la luz (el mensaje de regreso mide el corte desde aquí).
-- `stage1At` / `stage2At`: los marcadores que evitan repetir el mismo aviso cada 10 s.
+- `stage1At` / `stage2At`: los marcadores que evitan repetir el mismo aviso cada 10 s
+  (`stage2At` cubre los dos gatillos de la etapa 2).
 - `stoppedAt`: este corte terminó con el bot apagando el servidor.
 
 Borrar `power` es seguro: la siguiente lectura empieza un episodio nuevo.
@@ -145,6 +156,7 @@ Borrar `power` es seguro: la siguiente lectura empieza un episodio nuevo.
 | No hay aviso en el juego | El servidor está apagado, así que el RCON se salta | `/status <server>` |
 | El aviso de Discord no aparece | No hay canal para ese guild, o el guild no puede ver el servidor | `docker logs \| grep "power notice"` |
 | La mención no suena | Al bot le falta **Mention Everyone** en ese canal | Permisos del canal → rol del bot |
+| El aviso de "nos apagamos" llega tardísimo (o nunca) | `imminentOnBatteryMs` está en `0` y el `LB` de esa unidad no sirve | Configúralo (p. ej. `120000`) para UPS cuyo medidor miente |
 | El servidor se apagó y nadie dijo por qué | Eso es la etapa 2 funcionando | `data/state.json` → `stoppedAt` |
 
 ## Cómo probarlo sin riesgo
@@ -154,6 +166,7 @@ Borrar `power` es seguro: la siguiente lectura empieza un episodio nuevo.
 2. **UPS falso**: apunta `nut.port` a un servidor TCP mínimo que conteste `LIST VAR` con
    `ups.status "OB"` y mira las tres etapas contra el servidor real. Cubre toda la cadena sin tocar
    el UPS.
-3. **La prueba real**: desenchufa el UPS de la pared 3 minutos con el servidor encendido. La etapa 1
-   debe salir dentro de un ciclo de sondeo, y al reconectar debe publicar el regreso con la duración.
-   Tres minutos nunca llegan a `LB`, así que no se apaga nada.
+3. **La prueba real**: desenchufa el UPS de la pared con el servidor encendido. La etapa 1 debe
+   salir dentro de un ciclo de sondeo, y al reconectar debe publicar el regreso con la duración. Con
+   `imminentOnBatteryMs` configurado, pasar de ese umbral dispara la etapa 2 a propósito —
+   desenchufa menos tiempo para probar solo la etapa 1.

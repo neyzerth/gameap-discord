@@ -13,5 +13,6 @@
   },
   "notifyEveryoneOnLowBattery": true,
   "stopServersOnLowBattery": true,
-  "stopDelayMs": 5000
+  "stopDelayMs": 5000,
+  "imminentOnBatteryMs": 0
 }
