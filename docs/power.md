@@ -19,12 +19,18 @@ It is a separate timer and not a step of the player watcher on purpose: the watc
 seconds talking to the panel, and the low-battery window is short (the host starts its shutdown a
 couple of minutes after `LB`).
 
+Stage 2 has two possible triggers, and whichever comes first wins: the `LB` flag, or — optionally,
+with `imminentOnBatteryMs` — simply spending that long on battery. The second trigger exists for UPS
+units whose charge meter lies: some batteries crash from ~90 % to 0 in seconds, so `LB` can arrive
+with no time left, or never arrive at all.
+
 ```mermaid
 flowchart TD
   NUT["upsd 127.0.0.1:3493<br/>ups.status"] -->|every pollMs| READ["read the flags"]
   READ -->|"OL"| RESTORE["restored, if there was an outage"]
   READ -->|"OB"| STAGE1["stage 1: in-game warning + Discord embed"]
   READ -->|"OB LB"| STAGE2["stage 2: mention, save-all and stop"]
+  READ -->|"OB >= imminentOnBatteryMs"| STAGE2
   READ -->|"unreadable"| SILENT["nothing at all"]
   STAGE1 --> SAVE["save-all flush"]
   STAGE2 --> SAVE
@@ -39,6 +45,7 @@ line would be a lie on a 30-second flicker, where the host does not shut down at
 |---|---|
 | `OB` for the first time in an episode | In-game warning (title + chat + `save-all flush`) and the Discord embed, no mention |
 | `LB` for the first time in an episode | In-game warning, the Discord embed **with the configured mention** and the low-battery shutdown |
+| `OB` reaching `imminentOnBatteryMs` without `LB` | Same as `LB`: stage 2 by time on battery, for units whose meter crashes without ever sounding `LB` |
 | `LB` as the very first reading | Both stages, in order |
 | Mains back after an episode | "Mains power is back" with the real duration and whether the server was stopped |
 | `OL` with no prior outage | Nothing |
@@ -63,7 +70,8 @@ Every stage is announced **once per episode**, and the episode closes when `OL` 
   "notifyEveryoneOnLowBattery": true,
   "lowBatteryMention": "@everyone",
   "stopServersOnLowBattery": true,
-  "stopDelayMs": 5000
+  "stopDelayMs": 5000,
+  "imminentOnBatteryMs": 0
 }
 ```
 
@@ -80,15 +88,16 @@ Every stage is announced **once per episode**, and the episode closes when `OL` 
 | `lowBatteryMention` | `"@everyone"` | The mention itself (a role mention works too) |
 | `stopServersOnLowBattery` | `true` | Sends the panel `stop` in stage 2 |
 | `stopDelayMs` | `5000` | Pause between the warning and that `stop`, 0-30000 |
+| `imminentOnBatteryMs` | `0` | Fire stage 2 after this many ms on battery, even without `LB` (0-3600000); `0` disables it |
 
 Without `nut.ups` or `servers` the file is ignored, and the log says why.
 
 ### Low-battery shutdown
 
-In stage 2 the bot warns the players, waits `stopDelayMs` and sends `POST /api/servers/{id}/stop`
-for every listed server that is running, so the world is saved and the panel shows **stopped**
-instead of the process dying with the host. The server is **not** started again automatically: after
-the outage somebody has to run `/start <server>`.
+In stage 2 — no matter which trigger fired — the bot warns the players, waits `stopDelayMs` and
+sends `POST /api/servers/{id}/stop` for every listed server that is running, so the world is saved
+and the panel shows **stopped** instead of the process dying with the host. The server is **not**
+started again automatically: after the outage somebody has to run `/start <server>`.
 
 ### Safe mode (`POWER_DRY_RUN`)
 
@@ -117,7 +126,8 @@ shows up.
 | Stage | Title | Extra |
 |---|---|---|
 | 1 | ⚡ Mains power lost | Battery `%` and runtime as fields |
-| 2 | 🔋 Low battery — shutdown imminent | The configured mention |
+| 2 (`LB`) | 🔋 Low battery — shutdown imminent | The configured mention |
+| 2 (time) | 🔌 Outage still on — shutdown imminent | The configured mention (fires after `imminentOnBatteryMs` on battery) |
 | Back | ✅ Mains power is back | Duration, and how to start the server again if it was stopped |
 
 ## State in `data/state.json`
@@ -131,7 +141,8 @@ shows up.
 ```
 
 - `obSince`: when the mains were lost (the recovery message measures the outage from here).
-- `stage1At` / `stage2At`: the markers that stop the same warning from repeating every 10 s.
+- `stage1At` / `stage2At`: the markers that stop the same warning from repeating every 10 s
+  (`stage2At` covers both stage-2 triggers).
 - `stoppedAt`: this outage ended with the bot stopping the server.
 
 Deleting `power` is safe: the next read starts a fresh episode.
@@ -145,6 +156,7 @@ Deleting `power` is safe: the next read starts a fresh episode.
 | No in-game warning | The server is stopped, so the RCON is skipped | `/status <server>` |
 | The Discord notice never shows up | No channel for that guild, or the guild cannot use the server | `docker logs \| grep "power notice"` |
 | The mention does not ping | The bot lacks **Mention Everyone** in that channel | Channel permissions → the bot's role |
+| The "shutting down" warning arrives too late (or never) | `imminentOnBatteryMs` is `0` and `LB` is useless on that unit | Set it (e.g. `120000`) for units whose charge meter lies |
 | The server stopped and nobody said why | That is stage 2 working | `data/state.json` → `stoppedAt` |
 
 ## How to test it without risk
@@ -154,6 +166,7 @@ Deleting `power` is safe: the next read starts a fresh episode.
 2. **Fake UPS**: point `nut.port` at a tiny TCP server that answers `LIST VAR` with
    `ups.status "OB"`, and watch the three stages against the real server. This covers the whole
    chain without touching the UPS.
-3. **The real thing**: unplug the UPS from the wall for 3 minutes with the server on. Stage 1 must
-   show up within one poll, and plugging it back must post the recovery with the duration. Three
-   minutes never reach `LB`, so nothing is stopped.
+3. **The real thing**: unplug the UPS from the wall with the server on. Stage 1 must show up within
+   one poll, and plugging it back must post the recovery with the duration. With
+   `imminentOnBatteryMs` set, staying unplugged past that threshold fires stage 2 on purpose —
+   unplug for less time to test stage 1 alone.

@@ -17,7 +17,8 @@ restart them, run RCON commands, and get a message in a channel every time a pla
 - **Player feed** — a poller announces joins and leaves in the channel you choose, with rules that
   keep false announcements out.
 - **Optional power watch** — if the host has a UPS, the bot warns in game and in Discord when the
-  mains fail and stops the server cleanly on low battery ([docs/power.md](docs/power.md)).
+  mains fail and stops the server cleanly on low battery — or after a configured time on battery
+  ([docs/power.md](docs/power.md)).
 - **One bot, many servers** — several Discord guilds with their own channels, **per-command** operator
   roles and visible game servers, all configured in JSON.
 
