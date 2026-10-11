@@ -57,6 +57,41 @@ test('de en línea a batería baja dispara las dos etapas en orden', () => {
   assert.deepEqual(r.actions, ['outage', 'low']);
 });
 
+test('el tiempo en batería dispara la etapa 2 aunque el medidor de carga mienta', () => {
+  const opts = { imminentMs: 120_000 };
+  const outage = decidePower(null, 'onBattery', 1000, opts);
+  assert.deepEqual(outage.actions, ['outage']);
+
+  const early = decidePower(outage.state, 'onBattery', 1000 + 119_999, opts);
+  assert.deepEqual(early.actions, [], 'aún no llega al umbral');
+
+  const fired = decidePower(early.state, 'onBattery', 1000 + 120_000, opts);
+  assert.deepEqual(fired.actions, ['imminent']);
+  assert.equal(fired.state.stage2At, 1000 + 120_000);
+
+  assert.deepEqual(decidePower(fired.state, 'onBattery', 1000 + 300_000, opts).actions, [], 'una vez por episodio');
+});
+
+test('los dos gatillos de la etapa 2 no se repiten entre sí (gana el primero)', () => {
+  const opts = { imminentMs: 120_000 };
+
+  // Primero el tiempo, luego LB: LB ya no vuelve a anunciar.
+  let byTime = decidePower(null, 'onBattery', 0, opts).state;
+  byTime = decidePower(byTime, 'onBattery', 130_000, opts).state;
+  assert.deepEqual(decidePower(byTime, 'low', 140_000, opts).actions, []);
+
+  // Primero LB (el camino clásico), y el tiempo ya no dispara nada.
+  let byLow = decidePower(null, 'onBattery', 0, opts).state;
+  byLow = decidePower(byLow, 'low', 10_000, opts).state;
+  assert.deepEqual(decidePower(byLow, 'onBattery', 500_000, opts).actions, []);
+});
+
+test('sin imminentOnBatteryMs el tiempo no dispara nada (comportamiento clásico)', () => {
+  const state = decidePower(null, 'onBattery', 0).state;
+  assert.deepEqual(decidePower(state, 'onBattery', 999_999).actions, []);
+  assert.deepEqual(decidePower(state, 'onBattery', 999_999, {}).actions, []);
+});
+
 test('volver la luz reporta duración y si el servidor quedó apagado', () => {
   let st = decidePower(null, 'onBattery', 1000).state;
   st = decidePower(st, 'low', 2000).state;
@@ -120,6 +155,14 @@ test('los valores se normalizan y se acotan', () => {
   assert.equal(cfg.dryRun, false);
 });
 
+test('imminentOnBatteryMs se normaliza y se acota (0 = apagado)', () => {
+  const base = { enabled: true, nut: { ups: 'u' }, servers: ['1'] };
+  assert.equal(normalizePowerConfig({ ...base }).imminentMs, 0);
+  assert.equal(normalizePowerConfig({ ...base, imminentOnBatteryMs: 120_000 }).imminentMs, 120_000);
+  assert.equal(normalizePowerConfig({ ...base, imminentOnBatteryMs: -5 }).imminentMs, 0);
+  assert.equal(normalizePowerConfig({ ...base, imminentOnBatteryMs: 9_999_999 }).imminentMs, 3_600_000);
+});
+
 test('POWER_DRY_RUN y los interruptores se respetan', () => {
   const cfg = normalizePowerConfig(
     {
@@ -174,11 +217,19 @@ test('la etapa 2 avisa que se apaga en segundos', () => {
   assert.equal(lines.at(-1), 'save-all flush');
 });
 
+test('la etapa inminente avisa que se apaga en ~1 minuto', () => {
+  const lines = rconPipeline('es-MX', 'imminent');
+  assert.match(lines[1], /Apagado inminente/);
+  assert.match(chatText(lines), /aproximadamente un minuto/);
+  assert.match(chatText(lines), /La luz no ha vuelto/);
+  assert.equal(lines.at(-1), 'save-all flush');
+});
+
 // El panel rechaza comandos de más de 127 caracteres: este test es el que impide
 // volver a mandar un tellraw demasiado largo (pasó en la prueba real del 2026-10-06).
 test('ninguna línea del pipeline pasa del límite del panel (127 bytes)', () => {
   for (const locale of ['en', 'es-MX']) {
-    for (const stage of ['outage', 'low']) {
+    for (const stage of ['outage', 'low', 'imminent']) {
       for (const line of rconPipeline(locale, stage)) {
         const bytes = Buffer.byteLength(line, 'utf8');
         assert.ok(bytes <= RCON_MAX_BYTES, `${locale}/${stage}: ${bytes} bytes → ${line.slice(0, 60)}`);
@@ -306,7 +357,9 @@ test('readUpsVars: sin respuesta ni nombre de UPS nunca lanza', async () => {
 // --- embeds -----------------------------------------------------------------
 
 test('los embeds de energía salen en el idioma del guild', async () => {
-  const { powerLowEmbed, powerMessage, powerOutageEmbed, powerRestoredEmbed } = await import('./embeds.js');
+  const { powerImminentEmbed, powerLowEmbed, powerMessage, powerOutageEmbed, powerRestoredEmbed } = await import(
+    './embeds.js'
+  );
 
   const outage = powerOutageEmbed('es-MX', { label: 'MC Server', charge: '87', runtime: '2h 05m' }).toJSON();
   assert.equal(outage.title, '⚡ Se fue la luz');
@@ -318,6 +371,9 @@ test('los embeds de energía salen en el idioma del guild', async () => {
 
   assert.match(powerLowEmbed('es-MX', { label: 'MC Server' }).toJSON().title, /Batería baja/);
   assert.equal(powerOutageEmbed('en', { label: 'MC Server' }).toJSON().title, '⚡ Mains power lost');
+
+  assert.match(powerImminentEmbed('es-MX', { label: 'MC Server' }).toJSON().title, /apagado inminente/);
+  assert.equal(powerImminentEmbed('en', { label: 'MC Server' }).toJSON().title, '🔌 Outage still on — shutdown imminent');
 
   const back = powerRestoredEmbed('es-MX', { duration: '1h 30m', alias: 'mc-survival' }).toJSON();
   assert.match(back.description, /Corte de \*\*1h 30m\*\*/);
