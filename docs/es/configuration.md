@@ -43,6 +43,7 @@ cp config/guilds.example.json  config/guilds.json    # y editar alias/label/ids 
 | `FEEDS_STATE_FILE` | `./data/feeds.json` | Overrides de `/feed` |
 | `LOCALES_STATE_FILE` | `./data/locale.json` | Overrides de `/language` |
 | `DISCORD_APP_ID` | — | Solo informativo: `deploy-commands.js` resuelve el id desde el token |
+| `GAMEAP_SERVERS_DIR` | — (obligatoria en `compose.yaml`) | Directorio del host con los game servers; se monta en `/gameap` en solo lectura para que el feed lea sus logs |
 
 `DISCORD_GUILD_ID` **no** lo usa el código. Antes servía de fallback para el registro por guild y
 era la causa de comandos duplicados; hoy el registro por guild exige `--guild <id>` explícito.
@@ -59,6 +60,7 @@ sondeo del watcher.
 | `emoji` | no | Prefijo del título del embed (`🎲 MC Survival`) |
 | `announce` | no | `true` = el watcher lo sondea y puede alimentar feeds |
 | `autoStop` | no | `{ "hours": 2, "warnMinutes": 15 }` = apagado automático tras N horas sin jugadores (ver [autostop.md](autostop.md)) |
+| `logPath` | no | Ruta (del contenedor) al `latest.log` del servidor. Con ella el feed lee el log en vez de sondear `rcon/players` (ver [feed.md](feed.md)) |
 
 ```json
 {

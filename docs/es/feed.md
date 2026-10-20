@@ -43,6 +43,43 @@ Antes de pedir jugadores, el watcher verifica `rconFeatures()`. Si el juego no s
 (`server 8 does not support listing players; feed disabled for it`) y no vuelve a intentarlo en
 ese proceso: así no genera errores cada 20 s.
 
+## De dónde sale la lista de jugadores
+
+Cada servidor elige una de dos fuentes en `config/servers.json`:
+
+| Fuente | Necesita | Coste por ciclo |
+|---|---|---|
+| **`logPath`** (recomendado para Minecraft) | el log del servidor montado en solo lectura en el contenedor | un `stat` y los bytes añadidos desde la lectura anterior |
+| RCON (por defecto) | que el juego soporte `playersList` | un comando `list`, y dos líneas en el log del servidor |
+
+Con `logPath` el watcher lee el log que el servidor ya escribe: la línea base son los jugadores del **arranque actual** (todo lo que hay después de la última línea `Done (...)`), y a partir de ahí solo se parsean los bytes nuevos. Las entradas y salidas salen del propio texto del log, así que `list` no se envía nunca y la consola deja de mostrar `Thread RCON Client ... started` / `shutting down` cada 20 s.
+
+```json
+"9": { "alias": "cuervitos", "label": "Cuervitos MC", "announce": true,
+       "logPath": "/gameap/cuervitos-mc/logs/latest.log" }
+```
+
+Esa ruta es la del contenedor, no la del host: `compose.yaml` monta `${GAMEAP_SERVERS_DIR}` en `/gameap` en solo lectura. A esos servidores se les sigue preguntando `GET /status`, porque un servidor apagado deja su último log y leerlo reviviría una lista de jugadores vieja.
+
+```mermaid
+sequenceDiagram
+  participant W as watcher (cada 20 s)
+  participant L as latest.log (solo lectura)
+  participant P as panel GameAP
+  participant C as canales del feed
+
+  W->>P: GET /api/servers/9/status
+  P-->>W: processActive: true
+  W->>L: bytes añadidos desde el ciclo anterior
+  L-->>W: "bob joined the game"
+  W->>W: diff con la lectura anterior
+  loop por cada guild con feedTarget()
+    W->>C: embed "🟢 joined: bob"
+  end
+```
+
+Cuando el servidor se reinicia, Minecraft rota `latest.log` y crea uno nuevo: el lector detecta el archivo nuevo, rehace la línea base en silencio y nunca anuncia como salidas a los jugadores del arranque anterior.
+
 ## Reglas anti-spam (por qué casi nunca verás avisos raros)
 
 | Situación | Comportamiento | Motivo |
@@ -122,4 +159,5 @@ Detalles, reglas y cómo probarlo: [autostop.md](autostop.md).
 | Llegó un solo aviso y luego nada | No ha entrado/salido nadie de verdad | Prueba `/players mc-survival` |
 | El canal se inunda de avisos al iniciar | Estado borrado y servidor apagado | Revisa `data/state.json` (debe existir con `players`) |
 | `does not support listing players` | El juego no soporta `list` por RCON | Normal: ese servidor no puede tener feed |
+| Con `logPath`: no se anuncia nunca nada | Ruta equivocada, o falta el montaje | `docker logs`: busca `player source = log ...`; `docker compose exec gameap-bot ls -l <logPath>` |
 | `could not announce to <id>` | El bot perdío permiso en el canal (o lo borraron) | Permisos: View Channel + Send Messages + Embed Links |
