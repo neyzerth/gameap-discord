@@ -24,6 +24,7 @@
     "label": "MC Survival",
     "emoji": "🎲",
     "announce": true,
+    "logPath": "/gameap/mc-survival/logs/latest.log",
     "autoStop": { "hours": 2, "warnMinutes": 15 }
   }
 }
