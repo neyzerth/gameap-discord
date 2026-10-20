@@ -1,10 +1,12 @@
 import { rconFeatures, playerNames, serverStatus, stopServer } from './gameap.js';
 import {
   pollTargets, feedTarget, autoStopConfig, setOverrides, setAutoStopOverrides, setLocaleOverrides,
+  logPathFor,
 } from './config.js';
 import { getState, save, diff, loadFeeds, loadAutoStop, loadLocales } from './state.js';
 import { announcePlayers, fanOut, autostopWarningEmbed, autoStopEmbed } from './embeds.js';
 import { accumulateIdle, evaluateIdle, formatDuration, newIdle } from './autostop.js';
+import { createLogSource } from './logfeed.js';
 import { log } from './logger.js';
 
 const INTERVAL = Number(process.env.POLL_INTERVAL_MS ?? 20000);
@@ -21,6 +23,21 @@ async function fillPlayers(state, serverId, st) {
     return null;
   }
   return playerNames(serverId);
+}
+
+// A server with `logPath` reads its own log instead of asking for `rcon/players`:
+// no RCON traffic for the feed, and the console stops filling with
+// "Thread RCON Client ... started" (see docs/feed.md).
+const logSources = new Map();
+
+function logPlayers(serverId, logPath) {
+  let source = logSources.get(serverId);
+  if (!source) {
+    source = createLogSource(logPath);
+    logSources.set(serverId, source);
+    log.info(`server ${serverId}: player source = log ${logPath}`);
+  }
+  return source.read();
 }
 
 export function startWatcher(client) {
@@ -46,11 +63,27 @@ export function startWatcher(client) {
         let players = null;
         let ok = false;
         let active = null; // null = no se pudo saber; false = el panel dice que está apagado
+        const logPath = logPathFor(serverId);
 
         try {
-          players = await fillPlayers(state, serverId, st);
-          if (players === null) continue; // juego sin soporte para listar jugadores
-          ok = true;
+          if (logPath) {
+            // The log knows who is online; the panel knows whether the server is
+            // running. A stopped server leaves its last log behind, and reading it
+            // would keep a stale player list alive.
+            const status = await serverStatus(serverId);
+            if (status?.processActive === false) {
+              active = false;
+              st.unknown = true;
+              log.debug(`server ${serverId} is offline; skipping log read`);
+            } else {
+              players = logPlayers(serverId, logPath);
+              ok = true;
+            }
+          } else {
+            players = await fillPlayers(state, serverId, st);
+            if (players === null) continue; // juego sin soporte para listar jugadores
+            ok = true;
+          }
         } catch (err) {
           // Server off, RCON down or panel hiccup: never invent "left" events.
           st.unknown = true;
