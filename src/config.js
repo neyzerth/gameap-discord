@@ -148,6 +148,13 @@ export function serverMeta(serverId) {
   return serversFile[String(serverId)] ?? {};
 }
 
+// Optional: when a server exposes its own log to the bot, the feed reads it
+// instead of asking the panel for `rcon/players` (see docs/feed.md).
+export function logPathFor(serverId) {
+  const path = serverMeta(serverId).logPath;
+  return typeof path === 'string' && path.trim() ? path.trim() : null;
+}
+
 export function knownServerIds() {
   ensure();
   return Object.keys(serversFile);

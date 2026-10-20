@@ -33,6 +33,43 @@ sequenceDiagram
 
 Before asking for players, the watcher checks `rconFeatures()`. If the game doesn't support `playersList`, it marks the server as `unsupported` in memory, logs once (`server 8 does not support listing players; feed disabled for it`) and doesn't try again in that process: so it doesn't generate errors every 20 s.
 
+## Where the player list comes from
+
+Each server picks one of two sources in `config/servers.json`:
+
+| Source | Needs | Cost per cycle |
+|---|---|---|
+| **`logPath`** (recommended for Minecraft) | the server log mounted read-only in the container | a `stat` plus the bytes appended since the last read |
+| RCON (default) | `playersList` support in the game | a `list` command, and two lines in the server log |
+
+With `logPath` the watcher reads the log the server already writes: the players of the **current run** (everything after the last `Done (...)` line) are the baseline, and from then on only the appended bytes are parsed. Joins and leaves come from the log text, so `list` is never sent and the console stops showing `Thread RCON Client ... started` / `shutting down` every 20 s.
+
+```json
+"9": { "alias": "cuervitos", "label": "Cuervitos MC", "announce": true,
+       "logPath": "/gameap/cuervitos-mc/logs/latest.log" }
+```
+
+That path is the container's, not the host's: `compose.yaml` mounts `${GAMEAP_SERVERS_DIR}` at `/gameap` read-only. The panel is still asked for `GET /status` on these servers, because a stopped server keeps its last log and reading it would revive a stale player list.
+
+```mermaid
+sequenceDiagram
+  participant W as watcher (every 20 s)
+  participant L as latest.log (read-only)
+  participant P as GameAP panel
+  participant C as feed channels
+
+  W->>P: GET /api/servers/9/status
+  P-->>W: processActive: true
+  W->>L: bytes appended since the last cycle
+  L-->>W: "bob joined the game"
+  W->>W: diff against previous read
+  loop over each guild with feedTarget()
+    W->>C: embed "🟢 joined: bob"
+  end
+```
+
+When the server restarts, Minecraft rotates `latest.log` and starts a new one: the reader notices the new file, re-baselines silently and never announces the previous run's players as leaves.
+
 ## Anti-spam rules (why you'll almost never see weird notices)
 
 | Situation | Behavior | Reason |
@@ -106,4 +143,5 @@ Details, rules and how to test it: [autostop.md](autostop.md).
 | One notice arrived and then nothing | Nobody actually joined/left | Try `/players mc-survival` |
 | The channel floods with notices on startup | State deleted and server shut down | Check `data/state.json` (it must exist with `players`) |
 | `does not support listing players` | The game doesn't support `list` via RCON | Normal: that server can't have a feed |
+| With `logPath`: nothing is ever announced | Wrong path, or the mount is missing | `docker logs`: look for `player source = log ...`; `docker compose exec gameap-bot ls -l <logPath>` |
 | `could not announce to <id>` | The bot lost permission in the channel (or it was deleted) | Permissions: View Channel + Send Messages + Embed Links |

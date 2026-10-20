@@ -20,6 +20,10 @@ services:
     volumes:
       - ./data:/app/data
       - ./config:/app/config:ro
+      # Game server logs, read-only. The feed parses them instead of asking the
+      # panel for `rcon/players` (see docs/feed.md); GAMEAP_SERVERS_DIR lives in
+      # .env because this repo is public.
+      - ${GAMEAP_SERVERS_DIR:?set GAMEAP_SERVERS_DIR in .env}:/gameap:ro
     logging:
       driver: json-file
       options:

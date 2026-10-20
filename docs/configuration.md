@@ -44,6 +44,7 @@ cp config/guilds.example.json  config/guilds.json    # and edit the real alias/l
 | `FEEDS_STATE_FILE` | `./data/feeds.json` | `/feed` overrides |
 | `LOCALES_STATE_FILE` | `./data/locale.json` | `/language` overrides |
 | `DISCORD_APP_ID` | — | Informational only: `deploy-commands.js` resolves the id from the token |
+| `GAMEAP_SERVERS_DIR` | — (required by `compose.yaml`) | Host directory holding the game servers; mounted read-only at `/gameap` so the feed can read their logs |
 
 `DISCORD_GUILD_ID` is **not** used by the code. It used to serve as the fallback for guild-scoped registration and was the cause of duplicate commands; today guild-scoped registration requires an explicit `--guild <id>`.
 
@@ -58,6 +59,7 @@ Key = server id in the panel (string). `announce: true` is what puts the server 
 | `emoji` | no | Embed title prefix (`🎲 MC Survival`) |
 | `announce` | no | `true` = the watcher polls it and it can feed feeds |
 | `autoStop` | no | `{ "hours": 2, "warnMinutes": 15 }` = automatic shutdown after N hours without players (see [autostop.md](autostop.md)) |
+| `logPath` | no | Container path of the server's `latest.log`. With it the feed reads the log instead of polling `rcon/players` (see [feed.md](feed.md)) |
 
 ```json
 {
