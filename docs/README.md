@@ -53,6 +53,7 @@ flowchart LR
 | [feed.md](feed.md) | How the watcher detects joins/leaves and how it avoids false announcements |
 | [autostop.md](autostop.md) | The idle auto-stop (2 h with no players), how to configure it and how to test it safely |
 | [power.md](power.md) | Optional: in-game and Discord warnings when the UPS goes on battery, and the low-battery (or time-based) shutdown |
+| [events.md](events.md) | Optional: one-shot messages at a fixed date and time (a single emoji when an event starts), and how the grace window works |
 | [gameap-api.md](gameap-api.md) | Panel endpoints the bot uses, the PAT abilities it needs and its error handling |
 | [operations.md](operations.md) | Deploy, update, rotate credentials, step-by-step troubleshooting |
 | [development.md](development.md) | Code map, how to add a command, how to run the tests |
@@ -60,8 +61,8 @@ flowchart LR
 
 ## Data model (config vs state)
 
-`data/state.json` — the watcher's on-disk state: which players it saw in the last cycle, plus the
-idle clock of each server.
+`data/state.json` — the watcher's on-disk state: which players it saw in the last cycle, the idle
+clock of each server, and which scheduled messages (`events.sent`) were already posted.
 
 ```json
 {

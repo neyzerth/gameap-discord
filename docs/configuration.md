@@ -2,7 +2,7 @@
 
 # Configuration
 
-Six JSON config/state files and a `.env`. Inside
+Eight JSON config/state files and a `.env`. Inside
 `config/`, the repo only commits the **`*.example.json` templates**: the real `config/servers.json`
 and `config/guilds.json` are local (they are listed in `.gitignore`) because they carry the ids of
 your guilds, channels and game servers. The `data/*.json` files are **runtime state** and can be
@@ -13,6 +13,8 @@ compose.yaml          container (host network, user 1000, mounts)
 .env                  secrets: DISCORD_TOKEN, GAMEAP_TOKEN (chmod 600, never in the repo)
 config/servers.json   game server catalog: alias, label, emoji, announce, autoStop
 config/guilds.json    per Discord: feed channel, operator roles (per command), visible servers
+config/power.json     optional: UPS/NUT power-outage warnings
+config/event.json     optional: one-shot scheduled messages (date, channels, text)
 data/state.json       watcher: known players, inactivity clock and subscriptions
 data/feeds.json       /feed overrides (on/off and channel)
 data/autostop.json    /autostop overrides (per server)
@@ -44,6 +46,7 @@ cp config/guilds.example.json  config/guilds.json    # and edit the real alias/l
 | `FEEDS_STATE_FILE` | `./data/feeds.json` | `/feed` overrides |
 | `LOCALES_STATE_FILE` | `./data/locale.json` | `/language` overrides |
 | `DISCORD_APP_ID` | — | Informational only: `deploy-commands.js` resolves the id from the token |
+| `EVENT_FILE` | `./config/event.json` | Scheduled messages (optional; no file = feature off) |
 | `GAMEAP_SERVERS_DIR` | — (required by `compose.yaml`) | Host directory holding the game servers; mounted read-only at `/gameap` so the feed can read their logs |
 
 `DISCORD_GUILD_ID` is **not** used by the code. It used to serve as the fallback for guild-scoped registration and was the cause of duplicate commands; today guild-scoped registration requires an explicit `--guild <id>`.

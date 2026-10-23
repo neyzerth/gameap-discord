@@ -51,6 +51,7 @@ flowchart LR
 | [feed.md](feed.md) | Cómo detecta el watcher las entradas/salidas y cómo evita avisos falsos |
 | [autostop.md](autostop.md) | El auto-apagado por inactividad (2 h sin jugadores), cómo configurarlo y cómo probarlo |
 | [power.md](power.md) | Opcional: avisos en el juego y en Discord cuando el UPS entra en batería, y el apagado por batería baja o por tiempo en batería |
+| [events.md](events.md) | Opcional: mensajes de una sola vez a una fecha y hora fijas (un solo emoji cuando arranca un evento), y cómo funciona la ventana de gracia |
 | [gameap-api.md](gameap-api.md) | Endpoints del panel que usa el bot, permisos del PAT y manejo de errores |
 | [operations.md](operations.md) | Desplegar, actualizar, rotar credenciales, troubleshooting paso a paso |
 | [development.md](development.md) | Mapa del código, cómo agregar un comando, cómo correr los tests |
@@ -58,8 +59,8 @@ flowchart LR
 
 ## Modelo de datos (config vs estado)
 
-`data/state.json` — estado en disco del watcher: qué jugadores vio en el último ciclo y el reloj de
-inactividad de cada servidor.
+`data/state.json` — estado en disco del watcher: qué jugadores vio en el último ciclo, el reloj de
+inactividad de cada servidor y qué mensajes programados (`events.sent`) ya se publicaron.
 
 ```json
 {

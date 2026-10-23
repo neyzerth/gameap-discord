@@ -10,6 +10,7 @@ config/servers.json
 config/guilds.json
 config/commands.json
 config/power.json
+config/event.json
 data/
 .docs-leaks
 
