@@ -1,6 +1,7 @@
 import { Client, GatewayIntentBits, Events, MessageFlags } from 'discord.js';
 import { startWatcher } from './watcher.js';
 import { startPowerWatch } from './power-watch.js';
+import { startEventWatch } from './event-watch.js';
 import { loadCommands } from './registry.js';
 import { guildCommand, registerGuildCommands } from './custom-commands.js';
 import { resolveAppId } from './discord-app.js';
@@ -71,6 +72,8 @@ async function main() {
     startWatcher(client);
     // No-op unless config/power.json enables it (see docs/power.md).
     startPowerWatch(client);
+    // No-op unless config/event.json enables it (see docs/events.md).
+    startEventWatch(client);
 
     // Config commands are registered per guild, which is instant (no global
     // propagation) and keeps them scoped. Failure here must not stop the bot.
