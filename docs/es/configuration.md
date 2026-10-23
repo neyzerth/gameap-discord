@@ -2,7 +2,7 @@
 
 # Configuración
 
-Seis archivos JSON de configuración/estado y un `.env`. Dentro de `config/`, el repo solo versiona las **plantillas** `*.example.json`: los
+Ocho archivos JSON de configuración/estado y un `.env`. Dentro de `config/`, el repo solo versiona las **plantillas** `*.example.json`: los
 `config/servers.json` y `config/guilds.json` reales son locales (están en `.gitignore`) porque llevan
 los ids de tus guilds, canales y servidores. Los `data/*.json` son **estado en runtime** y se pueden
 borrar sin perder configuración.
@@ -12,6 +12,8 @@ compose.yaml          contenedor (host network, user 1000, mounts)
 .env                  secretos: DISCORD_TOKEN, GAMEAP_TOKEN (chmod 600, nunca al repo)
 config/servers.json   catálogo de game servers: alias, label, emoji, announce, autoStop
 config/guilds.json    por Discord: canal de feed, roles operadores (por comando), servidores visibles
+config/power.json     opcional: avisos de corte de energía (UPS/NUT)
+config/event.json     opcional: mensajes programados de una sola vez (fecha, canales, texto)
 data/state.json       watcher: jugadores conocidos, reloj de inactividad y suscripciones
 data/feeds.json       overrides de /feed (on/off y canal)
 data/autostop.json    overrides de /autostop (por servidor)
@@ -43,6 +45,7 @@ cp config/guilds.example.json  config/guilds.json    # y editar alias/label/ids 
 | `FEEDS_STATE_FILE` | `./data/feeds.json` | Overrides de `/feed` |
 | `LOCALES_STATE_FILE` | `./data/locale.json` | Overrides de `/language` |
 | `DISCORD_APP_ID` | — | Solo informativo: `deploy-commands.js` resuelve el id desde el token |
+| `EVENT_FILE` | `./config/event.json` | Mensajes programados (opcional; sin archivo = función apagada) |
 | `GAMEAP_SERVERS_DIR` | — (obligatoria en `compose.yaml`) | Directorio del host con los game servers; se monta en `/gameap` en solo lectura para que el feed lea sus logs |
 
 `DISCORD_GUILD_ID` **no** lo usa el código. Antes servía de fallback para el registro por guild y
