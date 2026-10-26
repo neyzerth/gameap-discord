@@ -4,6 +4,7 @@
 import { readFileSync } from 'node:fs';
 import { resolveAutoStop } from './autostop.js';
 import { normalizePowerConfig } from './power.js';
+import { normalizeEventConfig } from './events.js';
 import { BASE_LOCALE, canonicalTag, isSupported } from './i18n/index.js';
 
 const SERVERS_FILE = () => process.env.SERVERS_FILE ?? './config/servers.json';
@@ -11,6 +12,8 @@ const GUILDS_FILE = () => process.env.GUILDS_FILE ?? './config/guilds.json';
 // Optional on purpose: without this file (or with `enabled: false`) the power
 // watch never starts and the bot behaves exactly as before. See docs/power.md.
 const POWER_FILE = () => process.env.POWER_FILE ?? './config/power.json';
+// Optional too: scheduled one-shot messages (see docs/events.md).
+const EVENT_FILE = () => process.env.EVENT_FILE ?? './config/event.json';
 
 let serversFile = null;
 let guildsFile = null;
@@ -27,6 +30,8 @@ export function reloadConfig() {
   guildsFile = null;
   powerFile = null;
   powerSeen = false;
+  eventFile = null;
+  eventSeen = false;
   ensure();
 }
 
@@ -120,6 +125,32 @@ export function powerConfig() {
 // El archivo crudo: permite distinguir "apagado" de "mal configurado" en los logs.
 export function powerConfigRaw() {
   return readPowerFile();
+}
+
+// Mensajes programados (config/event.json). Mismo patrón que power: el archivo es
+// opcional y sin él la función queda apagada.
+let eventFile = null;
+let eventSeen = false;
+
+function readEventFile() {
+  if (!eventSeen) {
+    eventSeen = true;
+    try {
+      eventFile = JSON.parse(readFileSync(EVENT_FILE(), 'utf8'));
+    } catch {
+      eventFile = null; // sin archivo = función apagada
+    }
+  }
+  return eventFile;
+}
+
+// Config normalizada, o null cuando la función está apagada o sin entradas válidas.
+export function eventConfig() {
+  return normalizeEventConfig(readEventFile());
+}
+
+export function eventConfigRaw() {
+  return readEventFile();
 }
 
 // A dónde van los avisos de un servidor dentro de un guild: el mapeo explícito de

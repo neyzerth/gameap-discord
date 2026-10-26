@@ -29,6 +29,8 @@ src/
   gameap.js          cliente HTTP del panel (timeout 15 s)
   watcher.js         ciclo de polling y decisión de anunciar
   autostop.js        reloj de inactividad puro (resolveAutoStop, accumulateIdle, evaluateIdle)
+  events.js          mensajes programados: normalización, vencidos y marcas (puro)
+  event-watch.js     timer que publica las entradas de config/event.json (no-op si no existe)
   state.js           persistencia (state.json, feeds.json, autostop.json) y diff() puro
   embeds.js          embeds de estado/control/confirmación, avisos de auto-apagado y fan-out
   help.js            ayuda general y por comando, generada de los comandos vivos
